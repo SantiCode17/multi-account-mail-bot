@@ -2,7 +2,7 @@
 
 **Automated multi-email monitoring system with Telegram notifications.**
 
-Built for [UNICEDU (Poland Study)](https://wishpoland.com) to monitor **200+ email accounts** simultaneously and send instant Telegram alerts when new messages arrive.
+Monitors **200+ email accounts** simultaneously via IMAP and sends instant Telegram alerts when new messages arrive.
 
 ## How It Works
 
@@ -163,7 +163,7 @@ Once running, the Telegram bot responds to these commands:
 Each notification looks like this:
 
 ```
-❗ You've received a new message at user@wishpoland.com
+❗ You've received a new message at user@example.com
 
 From: sender@example.com
 Subject: Your application update
@@ -267,4 +267,4 @@ docker compose up -d
 
 ## License
 
-Internal tool — UNICEDU (Poland Study).
+Internal tool — Private use only.
