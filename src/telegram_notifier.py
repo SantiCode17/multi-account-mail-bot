@@ -24,10 +24,7 @@ class TelegramNotifier:
         """Verify the bot token is valid by calling getMe."""
         try:
             me = await self._bot.get_me()
-            logger.info(
-                "Telegram bot connected: @{username}",
-                username=me.username,
-            )
+            logger.info("Telegram bot connected: @{username}", username=me.username)
             return True
         except telegram.error.InvalidToken:
             logger.error("Invalid Telegram bot token")
@@ -38,7 +35,7 @@ class TelegramNotifier:
 
     @staticmethod
     def _format_message(msg: EmailMessage) -> str:
-        """Build the Telegram HTML notification matching the required format."""
+        """Build a professional Telegram HTML notification."""
         safe_email = html.escape(msg.account_email)
         safe_subject = html.escape(msg.subject) if msg.subject else "(no subject)"
         safe_sender = html.escape(msg.sender) if msg.sender else "Unknown"
@@ -46,25 +43,28 @@ class TelegramNotifier:
         safe_date = html.escape(msg.date) if msg.date else ""
 
         lines = [
-            f"❗ You've received a new message at <b>{safe_email}</b>",
+            "━━━━━━━━━━━━━━━━━━━━━━",
+            "📩 <b>New email received</b>",
+            "━━━━━━━━━━━━━━━━━━━━━━",
             "",
-            f"<b>From:</b> {safe_sender}",
-            f"<b>Subject:</b> {safe_subject}",
-            "",
+            f"📬 <b>Account:</b> <code>{safe_email}</code>",
+            f"👤 <b>From:</b> {safe_sender}",
+            f"📋 <b>Subject:</b> {safe_subject}",
         ]
 
-        if safe_body:
-            lines.append(safe_body)
-            lines.append("")
-
         if safe_date:
-            lines.append(f"📅 {safe_date}")
+            lines.append(f"📅 <b>Date:</b> {safe_date}")
+
+        if safe_body:
+            lines.append("")
+            lines.append(f"💬 <i>{safe_body}</i>")
+
+        lines.append("")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━")
 
         return "\n".join(lines)[:TELEGRAM_MESSAGE_LIMIT]
 
-    async def send_notification(
-        self, message: EmailMessage, max_retries: int = 3
-    ) -> bool:
+    async def send_notification(self, message: EmailMessage, max_retries: int = 3) -> bool:
         """Send a single notification with retry and rate-limit handling."""
         text = self._format_message(message)
 
@@ -86,55 +86,30 @@ class TelegramNotifier:
 
             except telegram.error.RetryAfter as exc:
                 wait = exc.retry_after + 1
-                logger.warning(
-                    "Rate-limited by Telegram, retrying in {s}s",
-                    s=wait,
-                )
+                logger.warning("Rate-limited by Telegram, retrying in {s}s", s=wait)
                 await asyncio.sleep(wait)
 
             except telegram.error.Forbidden:
-                logger.error(
-                    "Bot was blocked or chat {cid} not accessible",
-                    cid=self._chat_id,
-                )
+                logger.error("Bot was blocked or chat {cid} not accessible", cid=self._chat_id)
                 return False
 
             except telegram.error.BadRequest as exc:
-                logger.error(
-                    "Telegram BadRequest: {err}",
-                    err=exc,
-                )
+                logger.error("Telegram BadRequest: {err}", err=exc)
                 return False
 
             except telegram.error.TimedOut:
-                logger.warning(
-                    "Telegram request timed out (attempt {a}/{m})",
-                    a=attempt,
-                    m=max_retries,
-                )
+                logger.warning("Telegram timed out (attempt {a}/{m})", a=attempt, m=max_retries)
                 await asyncio.sleep(2 * attempt)
 
             except telegram.error.NetworkError as exc:
-                logger.warning(
-                    "Telegram network error (attempt {a}/{m}): {err}",
-                    a=attempt,
-                    m=max_retries,
-                    err=exc,
-                )
+                logger.warning("Telegram network error (attempt {a}/{m}): {err}", a=attempt, m=max_retries, err=exc)
                 await asyncio.sleep(2 * attempt)
 
             except Exception as exc:
-                logger.error(
-                    "Unexpected Telegram error: {err}",
-                    err=exc,
-                )
+                logger.error("Unexpected Telegram error: {err}", err=exc)
                 return False
 
-        logger.error(
-            "Failed to send notification after {n} retries for {email}",
-            n=max_retries,
-            email=message.account_email,
-        )
+        logger.error("Failed to send notification after {n} retries for {email}", n=max_retries, email=message.account_email)
         return False
 
     async def send_notifications(self, messages: list[EmailMessage]) -> int:
@@ -147,7 +122,7 @@ class TelegramNotifier:
         return sent
 
     async def send_raw(self, text: str) -> bool:
-        """Send a plain text message (used for status/startup messages)."""
+        """Send a raw HTML message (used for status/startup messages)."""
         try:
             await self._bot.send_message(
                 chat_id=self._chat_id,
