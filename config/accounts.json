@@ -1,0 +1,18 @@
+{
+  "accounts": [
+    {
+      "email": "example1@wishpoland.com",
+      "password": "app_password_here",
+      "imap_server": "imap.gmail.com",
+      "imap_port": 993,
+      "use_ssl": true
+    },
+    {
+      "email": "example2@outlook.com",
+      "password": "app_password_here",
+      "imap_server": "outlook.office365.com",
+      "imap_port": 993,
+      "use_ssl": true
+    }
+  ]
+}
