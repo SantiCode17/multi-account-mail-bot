@@ -8,6 +8,7 @@ from loguru import logger
 from src.models import EmailMessage, TelegramConfig
 
 MIN_SEND_INTERVAL = 0.05
+TELEGRAM_MESSAGE_LIMIT = 4096
 
 
 class TelegramNotifier:
@@ -59,7 +60,7 @@ class TelegramNotifier:
         if safe_date:
             lines.append(f"📅 {safe_date}")
 
-        return "\n".join(lines)
+        return "\n".join(lines)[:TELEGRAM_MESSAGE_LIMIT]
 
     async def send_notification(
         self, message: EmailMessage, max_retries: int = 3
