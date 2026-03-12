@@ -3,7 +3,9 @@ import signal
 import time
 
 from loguru import logger
+from telegram.ext import Application
 
+from src.bot_handlers import BotHandlers
 from src.config import load_accounts
 from src.database import Database
 from src.email_monitor import EmailMonitor
@@ -27,6 +29,7 @@ class MonitorScheduler:
         self._semaphore = asyncio.Semaphore(config.monitor.max_concurrent)
         self._running = True
         self._last_cleanup = time.monotonic()
+        self._bot_handlers = BotHandlers(config, self._db)
 
     async def _check_account(self, account: EmailAccount) -> list[EmailMessage]:
         """Check a single account, guarded by the concurrency semaphore."""
@@ -77,6 +80,7 @@ class MonitorScheduler:
 
         if all_new:
             sent = await self._notifier.send_notifications(all_new)
+            self._bot_handlers.add_notifications(sent)
             logger.info(
                 "Cycle complete: {accts} accounts | {new} new emails | "
                 "{sent} notifications sent | {errs} errors",
@@ -124,11 +128,20 @@ class MonitorScheduler:
             await self._db.close()
             return
 
+        app = Application.builder().token(self._config.telegram.bot_token).build()
+        self._bot_handlers.register(app)
+
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling(drop_pending_updates=True)
+        logger.info("Telegram bot polling started")
+
         account_count = len(self._config.accounts)
         await self._notifier.send_raw(
-            f"✅ <b>Email Monitor started</b>\n"
+            f"✅ <b>Inbox Bridge started</b>\n"
             f"Monitoring <b>{account_count}</b> accounts every "
-            f"<b>{self._config.monitor.check_interval}s</b>"
+            f"<b>{self._config.monitor.check_interval}s</b>\n\n"
+            f"Send /help to see available commands."
         )
 
         logger.info(
@@ -143,6 +156,7 @@ class MonitorScheduler:
             while self._running:
                 cycle_start = time.monotonic()
                 await self._run_cycle()
+                self._bot_handlers.increment_cycles()
                 await self._maybe_cleanup()
 
                 elapsed = time.monotonic() - cycle_start
@@ -151,5 +165,8 @@ class MonitorScheduler:
                     await asyncio.sleep(wait)
         finally:
             logger.info("Shutting down — closing resources")
-            await self._notifier.send_raw("⛔ <b>Email Monitor stopped</b>")
+            await self._notifier.send_raw("⛔ <b>Inbox Bridge stopped</b>")
+            await app.updater.stop()
+            await app.stop()
+            await app.shutdown()
             await self._db.close()

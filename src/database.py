@@ -116,3 +116,53 @@ class Database:
         except Exception as exc:
             logger.error("DB cleanup_old failed: {err}", err=exc)
             return 0
+
+    async def get_recent(self, limit: int = 10) -> list[dict]:
+        """Return the most recent seen-email entries."""
+        try:
+            cursor = await self._conn().execute(
+                "SELECT account_email, message_id, seen_at "
+                "FROM seen_emails ORDER BY seen_at DESC LIMIT ?",
+                (limit,),
+            )
+            rows = await cursor.fetchall()
+            return [
+                {
+                    "account_email": row["account_email"],
+                    "message_id": row["message_id"],
+                    "seen_at": row["seen_at"],
+                }
+                for row in rows
+            ]
+        except Exception as exc:
+            logger.error("DB get_recent failed: {err}", err=exc)
+            return []
+
+    async def get_account_stats(self) -> list[dict]:
+        """Return per-account counts of seen emails."""
+        try:
+            cursor = await self._conn().execute(
+                "SELECT account_email, COUNT(*) as total "
+                "FROM seen_emails GROUP BY account_email "
+                "ORDER BY total DESC"
+            )
+            rows = await cursor.fetchall()
+            return [
+                {"account_email": row["account_email"], "total": row["total"]}
+                for row in rows
+            ]
+        except Exception as exc:
+            logger.error("DB get_account_stats failed: {err}", err=exc)
+            return []
+
+    async def get_total_count(self) -> int:
+        """Return total number of tracked emails."""
+        try:
+            cursor = await self._conn().execute(
+                "SELECT COUNT(*) as cnt FROM seen_emails"
+            )
+            row = await cursor.fetchone()
+            return row["cnt"] if row else 0
+        except Exception as exc:
+            logger.error("DB get_total_count failed: {err}", err=exc)
+            return 0
