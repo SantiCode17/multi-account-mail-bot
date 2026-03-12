@@ -1,10 +1,13 @@
 import os
 import sys
+from pathlib import Path
 
 from loguru import logger
 
 from src.config import load_config
 from src.scheduler import MonitorScheduler
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _mask_token(token: str) -> str:
@@ -12,6 +15,14 @@ def _mask_token(token: str) -> str:
     if len(token) <= 12:
         return "***"
     return token[:5] + "..." + token[-4:]
+
+
+def _resolve_path(relative: str) -> str:
+    """Resolve a path relative to the project root directory."""
+    p = Path(relative)
+    if p.is_absolute():
+        return str(p)
+    return str(PROJECT_ROOT / p)
 
 
 def setup_logging(log_level: str, log_file_path: str) -> None:
@@ -30,9 +41,10 @@ def setup_logging(log_level: str, log_file_path: str) -> None:
         colorize=True,
     )
 
-    os.makedirs(os.path.dirname(log_file_path) or ".", exist_ok=True)
+    resolved_log = _resolve_path(log_file_path)
+    os.makedirs(os.path.dirname(resolved_log) or ".", exist_ok=True)
     logger.add(
-        log_file_path,
+        resolved_log,
         level="DEBUG",
         format=(
             "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | "

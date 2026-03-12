@@ -12,6 +12,16 @@ from src.models import (
     TelegramConfig,
 )
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _resolve_path(relative: str) -> str:
+    """Resolve a path relative to the project root directory."""
+    p = Path(relative)
+    if p.is_absolute():
+        return str(p)
+    return str(PROJECT_ROOT / p)
+
 
 def _require_env(name: str) -> str:
     """Return an environment variable or raise with a clear message."""
@@ -77,7 +87,8 @@ def load_accounts(path: str) -> list[EmailAccount]:
 
 def load_config() -> AppConfig:
     """Load the full application configuration from .env and accounts.json."""
-    load_dotenv()
+    env_path = PROJECT_ROOT / ".env"
+    load_dotenv(env_path)
 
     bot_token = _require_env("TELEGRAM_BOT_TOKEN")
     chat_id = _require_env("TELEGRAM_CHAT_ID")
@@ -87,14 +98,16 @@ def load_config() -> AppConfig:
     batch_size = _env_int("BATCH_SIZE", 50)
     preview_length = _env_int("EMAIL_BODY_PREVIEW_LENGTH", 500)
 
-    database_path = os.getenv("DATABASE_PATH", "data/seen_emails.db").strip()
+    database_path = _resolve_path(
+        os.getenv("DATABASE_PATH", "data/seen_emails.db").strip()
+    )
     log_level = os.getenv("LOG_LEVEL", "INFO").strip()
-    log_file_path = os.getenv(
-        "LOG_FILE_PATH", "logs/email_monitor.log"
-    ).strip()
-    accounts_config_path = os.getenv(
-        "ACCOUNTS_CONFIG_PATH", "config/accounts.json"
-    ).strip()
+    log_file_path = _resolve_path(
+        os.getenv("LOG_FILE_PATH", "logs/email_monitor.log").strip()
+    )
+    accounts_config_path = _resolve_path(
+        os.getenv("ACCOUNTS_CONFIG_PATH", "config/accounts.json").strip()
+    )
 
     accounts = load_accounts(accounts_config_path)
 
