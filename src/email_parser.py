@@ -6,7 +6,6 @@ import hashlib
 from typing import Optional
 
 from bs4 import BeautifulSoup
-from loguru import logger
 
 from src.models import EmailMessage
 from src.utils import clean_whitespace, format_date, truncate_text
