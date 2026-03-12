@@ -1,7 +1,6 @@
 import asyncio
 import imaplib
 import socket
-from typing import Optional
 
 from loguru import logger
 
@@ -100,6 +99,13 @@ class EmailMonitor:
                 server=account.imap_server,
                 port=account.imap_port,
                 email=account.email,
+            )
+            return []
+        except OSError as exc:
+            logger.error(
+                "OS/network error for {email}: {err}",
+                email=account.email,
+                err=exc,
             )
             return []
         except Exception as exc:

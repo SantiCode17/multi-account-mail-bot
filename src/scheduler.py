@@ -1,7 +1,6 @@
 import asyncio
 import signal
 import time
-from typing import Optional
 
 from loguru import logger
 

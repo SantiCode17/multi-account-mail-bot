@@ -52,22 +52,29 @@ class Database:
 
     async def is_seen(self, account_email: str, message_id: str) -> bool:
         """Check whether a message has already been recorded."""
-        cursor = await self._conn().execute(
-            "SELECT 1 FROM seen_emails WHERE account_email = ? AND message_id = ?",
-            (account_email, message_id),
-        )
-        row = await cursor.fetchone()
-        return row is not None
+        try:
+            cursor = await self._conn().execute(
+                "SELECT 1 FROM seen_emails WHERE account_email = ? AND message_id = ?",
+                (account_email, message_id),
+            )
+            row = await cursor.fetchone()
+            return row is not None
+        except Exception as exc:
+            logger.error("DB is_seen query failed: {err}", err=exc)
+            return False
 
     async def mark_seen(self, account_email: str, message_id: str) -> None:
         """Record a single message as seen (ignores duplicates)."""
-        now = datetime.now(timezone.utc).isoformat()
-        await self._conn().execute(
-            "INSERT OR IGNORE INTO seen_emails (account_email, message_id, seen_at) "
-            "VALUES (?, ?, ?)",
-            (account_email, message_id, now),
-        )
-        await self._conn().commit()
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+            await self._conn().execute(
+                "INSERT OR IGNORE INTO seen_emails (account_email, message_id, seen_at) "
+                "VALUES (?, ?, ?)",
+                (account_email, message_id, now),
+            )
+            await self._conn().commit()
+        except Exception as exc:
+            logger.error("DB mark_seen failed: {err}", err=exc)
 
     async def mark_seen_bulk(
         self, entries: list[tuple[str, str]]
@@ -78,27 +85,34 @@ class Database:
         """
         if not entries:
             return
-        now = datetime.now(timezone.utc).isoformat()
-        await self._conn().executemany(
-            "INSERT OR IGNORE INTO seen_emails (account_email, message_id, seen_at) "
-            "VALUES (?, ?, ?)",
-            [(acct, mid, now) for acct, mid in entries],
-        )
-        await self._conn().commit()
-        logger.debug("Bulk-marked {count} messages as seen", count=len(entries))
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+            await self._conn().executemany(
+                "INSERT OR IGNORE INTO seen_emails (account_email, message_id, seen_at) "
+                "VALUES (?, ?, ?)",
+                [(acct, mid, now) for acct, mid in entries],
+            )
+            await self._conn().commit()
+            logger.debug("Bulk-marked {count} messages as seen", count=len(entries))
+        except Exception as exc:
+            logger.error("DB mark_seen_bulk failed: {err}", err=exc)
 
     async def cleanup_old(self, days: int = 30) -> int:
         """Delete records older than *days*. Returns the number of rows removed."""
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        cursor = await self._conn().execute(
-            "DELETE FROM seen_emails WHERE seen_at < ?", (cutoff,)
-        )
-        await self._conn().commit()
-        removed = cursor.rowcount
-        if removed:
-            logger.info(
-                "Cleaned up {count} seen-email records older than {days} days",
-                count=removed,
-                days=days,
+        try:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            cursor = await self._conn().execute(
+                "DELETE FROM seen_emails WHERE seen_at < ?", (cutoff,)
             )
-        return removed
+            await self._conn().commit()
+            removed = cursor.rowcount
+            if removed:
+                logger.info(
+                    "Cleaned up {count} seen-email records older than {days} days",
+                    count=removed,
+                    days=days,
+                )
+            return removed
+        except Exception as exc:
+            logger.error("DB cleanup_old failed: {err}", err=exc)
+            return 0

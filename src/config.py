@@ -44,7 +44,10 @@ def load_accounts(path: str) -> list[EmailAccount]:
         raise FileNotFoundError(f"Accounts config not found: {config_path}")
 
     with open(config_path, "r", encoding="utf-8") as fh:
-        data = json.load(fh)
+        try:
+            data = json.load(fh)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON in {config_path}: {exc}") from exc
 
     raw_accounts = data.get("accounts", [])
     if not isinstance(raw_accounts, list):

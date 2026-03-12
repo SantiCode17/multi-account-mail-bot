@@ -7,6 +7,13 @@ from src.config import load_config
 from src.scheduler import MonitorScheduler
 
 
+def _mask_token(token: str) -> str:
+    """Show only the first 5 and last 4 characters of a token."""
+    if len(token) <= 12:
+        return "***"
+    return token[:5] + "..." + token[-4:]
+
+
 def setup_logging(log_level: str, log_file_path: str) -> None:
     """Configure loguru with console and file sinks."""
     logger.remove()
@@ -39,6 +46,8 @@ def setup_logging(log_level: str, log_file_path: str) -> None:
 
 async def main() -> None:
     """Application entry point."""
+    setup_logging("INFO", "logs/email_monitor.log")
+
     try:
         config = load_config()
     except Exception as exc:
@@ -48,8 +57,9 @@ async def main() -> None:
     setup_logging(config.log_level, config.log_file_path)
 
     logger.info(
-        "Starting Inbox Bridge — {n} accounts configured",
+        "Starting Inbox Bridge — {n} accounts | token {t}",
         n=len(config.accounts),
+        t=_mask_token(config.telegram.bot_token),
     )
 
     scheduler = MonitorScheduler(config)
