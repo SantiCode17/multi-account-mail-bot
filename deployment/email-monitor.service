@@ -1,0 +1,16 @@
+[Unit]
+Description=UNICEDU Email Monitor — Inbox Bridge
+After=network.target
+
+[Service]
+Type=simple
+User=emailmonitor
+WorkingDirectory=/opt/email-monitor
+ExecStart=/opt/email-monitor/venv/bin/python run.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
