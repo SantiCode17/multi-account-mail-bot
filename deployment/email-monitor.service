@@ -1,5 +1,5 @@
 [Unit]
-Description=UNICEDU Email Monitor — Inbox Bridge
+Description=Inbox Bridge — Email Monitor
 After=network.target
 
 [Service]

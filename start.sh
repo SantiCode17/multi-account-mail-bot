@@ -17,7 +17,6 @@ print_banner() {
     echo "  ╔══════════════════════════════════════════╗"
     echo "  ║        📬  INBOX BRIDGE  📬              ║"
     echo "  ║   Multi-Account Email Monitor Bot        ║"
-    echo "  ║          UNICEDU · Poland Study          ║"
     echo "  ╚══════════════════════════════════════════╝"
     echo -e "${NC}"
 }
