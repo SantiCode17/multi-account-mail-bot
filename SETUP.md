@@ -1,28 +1,61 @@
 # 📬 Inbox Bridge — Setup Guide
 
+> Complete guide to get the project running from a fresh download.
+
 ---
 
 ## 1. Create a Telegram Bot
 
 1. Open **[@BotFather](https://t.me/BotFather)** in Telegram
-2. Send `/newbot` → choose a name → choose a username (must end in `bot`)
-3. **Copy the token** it gives you (e.g. `8641449158:AAH-gzI76Kz...`)
+2. Send `/newbot`
+3. Choose a display name (anything you want)
+4. Choose a username — **must end in `bot`** (e.g. `my_mail_alerts_bot`)
+5. BotFather replies with a **token** like `8641449158:AAH-gzI76KzUqFZbF9P-...`
+6. **Copy and save the token** — you'll need it in step 3
+7. **Open your new bot** in Telegram and press **Start** (this is required)
 
 ## 2. Get Your Chat ID
 
 1. Open **[@userinfobot](https://t.me/userinfobot)** in Telegram
 2. Send `/start`
-3. **Copy the number** next to `Id` (e.g. `1792370231`)
+3. Copy the number next to **Id** (e.g. `1792370231`)
 
-## 3. Configure `.env`
+## 3. Create the `.env` File
 
-Edit the `.env` file in the project root with your data:
+The `.env` file is **not included** in the download — you must create it.
+
+In the **project root folder**, create a file named `.env` and paste this content:
 
 ```env
-TELEGRAM_BOT_TOKEN=your_token_here
+# Telegram Bot Configuration
+TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
+
+# Monitoring Configuration
 CHECK_INTERVAL_SECONDS=10
+MAX_CONCURRENT_CONNECTIONS=20
+BATCH_SIZE=50
+EMAIL_BODY_PREVIEW_LENGTH=500
+
+# Database
+DATABASE_PATH=data/seen_emails.db
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE_PATH=logs/email_monitor.log
+
+# Accounts Configuration
+ACCOUNTS_CONFIG_PATH=config/accounts.json
 ```
+
+Replace the two placeholder values:
+
+| Variable | Replace with |
+|----------|-------------|
+| `TELEGRAM_BOT_TOKEN` | The token from BotFather (step 1) |
+| `TELEGRAM_CHAT_ID` | Your numeric Chat ID (step 2) |
+
+> All other values can be left as-is.
 
 ## 4. Configure Email Accounts
 
