@@ -1,0 +1,1132 @@
+================================================================================
+     📬  INBOX BRIDGE — GUÍA COMPLETA DE INSTALACIÓN Y CONFIGURACIÓN  📬
+================================================================================
+
+    Versión:  1.0
+    Fecha:    Marzo 2026
+    Autor:    SantiCode17
+
+    Esta guía está escrita para que CUALQUIER PERSONA, incluso sin
+    conocimientos de informática, pueda poner en marcha la aplicación
+    siguiendo los pasos uno a uno.
+
+================================================================================
+                         ÍNDICE DE CONTENIDOS
+================================================================================
+
+    PARTE 1 — ¿Qué es Inbox Bridge y qué necesitas?
+    PARTE 2 — Crear tu Bot de Telegram (paso a paso)
+    PARTE 3 — Obtener tu Chat ID de Telegram
+    PARTE 4 — Configurar cuentas de correo electrónico (¡LA PARTE CLAVE!)
+              • Gmail (Google)
+              • Outlook / Hotmail / Live (Microsoft)
+              • Yahoo Mail
+              • iCloud (Apple)
+              • Zoho Mail
+              • ProtonMail (con Bridge)
+              • GMX Mail
+              • AOL Mail
+              • Mail.com
+              • Yandex Mail
+              • FastMail
+              • Tabla resumen de todos los proveedores
+    PARTE 5 — Instalar la aplicación en tu ordenador
+    PARTE 6 — Configurar el archivo .env
+    PARTE 7 — Añadir tus cuentas de correo al archivo accounts.json
+    PARTE 8 — Ejecutar la aplicación
+    PARTE 9 — Usar el bot de Telegram
+    PARTE 10 — Solución de problemas frecuentes
+
+
+================================================================================
+    PARTE 1 — ¿QUÉ ES INBOX BRIDGE Y QUÉ NECESITAS?
+================================================================================
+
+Inbox Bridge es una aplicación que vigila una o varias cuentas de correo
+electrónico y te envía una notificación instantánea a Telegram cada vez
+que recibes un email nuevo.
+
+    ¿Para qué sirve?
+    → No tienes que estar abriendo Gmail, Outlook o Yahoo todo el rato.
+    → Recibes un aviso en Telegram en menos de 10 segundos.
+    → Puedes vigilar VARIAS cuentas de correo a la vez.
+
+    ¿Qué necesitas antes de empezar?
+
+    ✅ Un ordenador con Windows, macOS o Linux
+    ✅ Conexión a Internet
+    ✅ Una cuenta de Telegram (la app de mensajería)
+    ✅ Al menos una cuenta de correo electrónico (Gmail, Outlook, etc.)
+    ✅ Python 3.10 o superior instalado en tu ordenador
+
+    ¿No tienes Python instalado?
+    → Ve a: https://www.python.org/downloads/
+    → Descarga la versión más reciente (botón amarillo grande)
+    → Al instalar, MARCA la casilla que dice "Add Python to PATH"
+    → Haz clic en "Install Now"
+
+
+================================================================================
+    PARTE 2 — CREAR TU BOT DE TELEGRAM (paso a paso)
+================================================================================
+
+Un "bot" es como un asistente automático dentro de Telegram. Necesitas
+crear uno para que la aplicación pueda enviarte los avisos.
+
+    PASO 1: Abre Telegram en tu móvil o en tu ordenador.
+
+    PASO 2: En la barra de búsqueda de arriba, escribe:
+            @BotFather
+            (Es el bot oficial de Telegram para crear otros bots)
+
+    PASO 3: Pulsa en el resultado que dice "BotFather" con una insignia
+            azul de verificado ✓.
+
+    PASO 4: Pulsa el botón "INICIAR" o escribe:
+            /start
+
+    PASO 5: Escribe el comando:
+            /newbot
+
+    PASO 6: BotFather te preguntará: "Alright, a new bot. How are we
+            going to call it? Please choose a name for your bot."
+
+            → Escribe un nombre para tu bot. Puede ser lo que quieras.
+              Ejemplo: Mi Monitor de Correos
+
+    PASO 7: BotFather te preguntará: "Good. Now let's choose a username
+            for your bot."
+
+            → Escribe un nombre de usuario que DEBE terminar en "bot".
+              Ejemplo: mi_monitor_correos_bot
+
+            NOTA: Si el nombre ya está cogido, prueba otro. Puedes poner
+            números o guiones bajos. Ejemplo: correos_santi_2026_bot
+
+    PASO 8: Si todo sale bien, BotFather te dará un mensaje parecido a:
+
+            "Done! Congratulations on your new bot...
+             Use this token to access the HTTP API:
+             1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+
+            ⚠️  ESE NÚMERO LARGO ES TU "TOKEN". CÓPIALO Y GUÁRDALO.
+            Lo necesitarás más adelante. Es algo como:
+            8641449158:AAH-gzI76KzUqFZbF9P-BwPOFgKGsgOMt5E
+
+            ¡NO lo compartas con nadie! Es como la contraseña de tu bot.
+
+    PASO 9: Ahora busca tu bot en Telegram. En la barra de búsqueda,
+            escribe el nombre de usuario que elegiste (ejemplo:
+            @mi_monitor_correos_bot).
+
+    PASO 10: Abre la conversación con tu bot y pulsa "INICIAR" o
+             escribe /start. Esto es OBLIGATORIO para que el bot pueda
+             enviarte mensajes después.
+
+    ✅ ¡Listo! Ya tienes tu bot de Telegram creado.
+
+
+================================================================================
+    PARTE 3 — OBTENER TU CHAT ID DE TELEGRAM
+================================================================================
+
+El "Chat ID" es un número que identifica tu conversación personal con el
+bot. La aplicación lo necesita para saber A QUIÉN enviar las
+notificaciones.
+
+    MÉTODO MÁS FÁCIL:
+
+    PASO 1: Abre Telegram y busca: @userinfobot
+    PASO 2: Pulsa "INICIAR" o escribe /start
+    PASO 3: El bot te responderá algo como:
+
+            Id: 1792370231
+            First: Santiago
+            Last: ...
+
+            → El número que aparece en "Id:" es tu Chat ID.
+              En este ejemplo sería: 1792370231
+
+    PASO 4: Copia ese número y guárdalo. Lo necesitarás más adelante.
+
+    MÉTODO ALTERNATIVO (si el anterior no funciona):
+
+    PASO 1: Abre un navegador web (Chrome, Firefox, etc.)
+    PASO 2: Primero, ASEGÚRATE de haber enviado un mensaje a tu bot en
+            Telegram (escribe "hola" o cualquier cosa).
+    PASO 3: Ve a esta dirección (reemplaza TU_TOKEN por el token que
+            te dio BotFather):
+
+            https://api.telegram.org/botTU_TOKEN/getUpdates
+
+            Ejemplo real:
+            https://api.telegram.org/bot1234567890:ABCdef.../getUpdates
+
+    PASO 4: Verás un texto con muchos números. Busca donde dice:
+            "chat":{"id":1234567890
+            Ese número es tu Chat ID.
+
+    ✅ ¡Listo! Ya tienes tu Chat ID.
+
+
+================================================================================
+    PARTE 4 — CONFIGURAR CUENTAS DE CORREO ELECTRÓNICO
+================================================================================
+
+    ⚠️  ESTA ES LA PARTE MÁS IMPORTANTE DE TODA LA GUÍA ⚠️
+
+La aplicación se conecta a tus cuentas de correo usando un protocolo
+llamado "IMAP". Piensa en IMAP como una puerta trasera oficial que los
+proveedores de correo (Gmail, Outlook, etc.) ofrecen para que programas
+externos puedan leer tus emails.
+
+Para que esto funcione necesitas DOS cosas por cada cuenta:
+
+    1. ACTIVAR el acceso IMAP en tu cuenta de correo (si no lo está ya)
+    2. CREAR una "contraseña de aplicación" (es una contraseña especial
+       diferente a la que usas para iniciar sesión normalmente)
+
+    ¿Por qué una "contraseña de aplicación" y no mi contraseña normal?
+    → Por seguridad. Los proveedores de correo modernos no permiten que
+      aplicaciones externas usen tu contraseña principal. En su lugar,
+      te dejan generar una contraseña única solo para esta aplicación.
+      Si algún día quieres revocar el acceso, simplemente borras esa
+      contraseña de aplicación y tu cuenta sigue segura.
+
+
+────────────────────────────────────────────────────────────────────────
+    4.1 — GMAIL (Google) — @gmail.com
+────────────────────────────────────────────────────────────────────────
+
+    Gmail es el proveedor más usado del mundo. Sigue estos pasos:
+
+    A) ACTIVAR LA VERIFICACIÓN EN DOS PASOS (obligatorio para Gmail)
+    ................................................................
+
+    Si ya la tienes activada, pasa al apartado B.
+
+    PASO 1: Abre un navegador y ve a:
+            https://myaccount.google.com/security
+
+    PASO 2: Inicia sesión con tu cuenta de Gmail si no lo has hecho.
+
+    PASO 3: Baja hasta la sección "Cómo inicias sesión en Google".
+
+    PASO 4: Busca "Verificación en dos pasos" y haz clic.
+
+    PASO 5: Sigue las instrucciones de Google. Normalmente te pedirá:
+            → Tu número de teléfono para recibir un código por SMS
+            → Confirmar el código que recibes
+
+    PASO 6: Una vez activada, verás un mensaje confirmando que está
+            habilitada.
+
+    B) CREAR UNA CONTRASEÑA DE APLICACIÓN
+    ......................................
+
+    PASO 1: Ve a esta dirección en tu navegador:
+            https://myaccount.google.com/apppasswords
+
+            (Si te pide iniciar sesión, hazlo con tu cuenta de Gmail)
+
+    PASO 2: En el campo "Nombre de la app", escribe:
+            Inbox Bridge
+            (Puedes poner lo que quieras, es solo para que recuerdes
+             para qué sirve esta contraseña)
+
+    PASO 3: Haz clic en "Crear" o "Generate".
+
+    PASO 4: Google te mostrará una contraseña de 16 letras agrupadas
+            de 4 en 4, algo como:
+            abcd efgh ijkl mnop
+
+            ⚠️  COPIA ESTA CONTRASEÑA Y GUÁRDALA. Solo se muestra UNA
+            vez. Si la pierdes, tendrás que crear otra nueva.
+
+    PASO 5: Haz clic en "Listo" o "Done".
+
+    C) DATOS PARA LA CONFIGURACIÓN DE GMAIL
+    ........................................
+
+    Correo:       tu_correo@gmail.com
+    Contraseña:   abcd efgh ijkl mnop   ← la de aplicación, NO la normal
+    Servidor:     imap.gmail.com
+    Puerto:       993
+    SSL:          true (sí)
+
+    NOTA: El IMAP en Gmail está activado por defecto. Si por algún
+    motivo no funciona, actívalo manualmente:
+    → Abre Gmail en el navegador → ⚙️ Configuración → "Ver todos los
+      ajustes" → pestaña "Reenvío y correo POP/IMAP" → Marca "Habilitar
+      IMAP" → Guardar cambios.
+    → Enlace directo: https://mail.google.com/mail/#settings/fwdandpop
+
+
+────────────────────────────────────────────────────────────────────────
+    4.2 — OUTLOOK / HOTMAIL / LIVE (Microsoft) — @outlook.com,
+          @hotmail.com, @live.com, @outlook.es, @msn.com
+────────────────────────────────────────────────────────────────────────
+
+    Todas las cuentas de Microsoft (outlook.com, hotmail.com, live.com,
+    outlook.es, msn.com) se configuran de la misma forma.
+
+    A) ACTIVAR LA VERIFICACIÓN EN DOS PASOS
+    ........................................
+
+    PASO 1: Abre tu navegador y ve a:
+            https://account.microsoft.com/security
+
+    PASO 2: Inicia sesión con tu cuenta de Microsoft.
+
+    PASO 3: Haz clic en "Verificación en dos pasos" o "Two-step
+            verification".
+
+    PASO 4: Sigue las instrucciones para activarla. Normalmente te
+            pedirán un número de teléfono o una app de autenticación.
+
+    B) CREAR UNA CONTRASEÑA DE APLICACIÓN
+    ......................................
+
+    PASO 1: Ve a esta dirección:
+            https://account.microsoft.com/security
+
+    PASO 2: Busca la sección "Contraseñas de aplicación" o "App
+            passwords".
+
+            NOTA: Si no ves esta opción, ve directamente a:
+            https://account.live.com/proofs/AppPassword
+
+    PASO 3: Haz clic en "Crear una nueva contraseña de aplicación".
+
+    PASO 4: Microsoft te generará una contraseña. CÓPIALA y guárdala.
+
+    C) ACTIVAR IMAP (normalmente ya está activo)
+    .............................................
+
+    PASO 1: Abre https://outlook.live.com en tu navegador.
+    PASO 2: Ve a ⚙️ Configuración → "Ver toda la configuración de
+            Outlook".
+    PASO 3: Ve a "Correo" → "Sincronizar correo electrónico".
+    PASO 4: Asegúrate de que "Permitir que dispositivos y aplicaciones
+            usen POP" o IMAP esté activado.
+    PASO 5: Guarda los cambios.
+
+    D) DATOS PARA LA CONFIGURACIÓN DE OUTLOOK/HOTMAIL/LIVE
+    .......................................................
+
+    Correo:       tu_correo@outlook.com  (o @hotmail.com, @live.com, etc.)
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     outlook.office365.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.3 — YAHOO MAIL — @yahoo.com, @yahoo.es, @yahoo.co.uk, etc.
+────────────────────────────────────────────────────────────────────────
+
+    A) ACTIVAR LA VERIFICACIÓN EN DOS PASOS
+    ........................................
+
+    PASO 1: Abre tu navegador y ve a:
+            https://login.yahoo.com/account/security
+
+    PASO 2: Inicia sesión con tu cuenta de Yahoo.
+
+    PASO 3: Busca "Verificación en dos pasos" o "Two-step verification"
+            y actívala.
+
+    PASO 4: Sigue las instrucciones (normalmente te piden un número de
+            teléfono).
+
+    B) GENERAR UNA CONTRASEÑA DE APLICACIÓN
+    ........................................
+
+    PASO 1: Una vez activada la verificación en dos pasos, en la misma
+            página de seguridad:
+            https://login.yahoo.com/account/security
+
+    PASO 2: Busca "Generar contraseña de aplicación" o "Generate app
+            password".
+
+    PASO 3: En el desplegable que aparece, selecciona "Otra app" o
+            "Other App" y escribe: Inbox Bridge
+
+    PASO 4: Haz clic en "Generar" o "Generate".
+
+    PASO 5: Yahoo te mostrará una contraseña de 16 caracteres.
+            CÓPIALA y guárdala.
+
+    C) DATOS PARA LA CONFIGURACIÓN DE YAHOO
+    ........................................
+
+    Correo:       tu_correo@yahoo.com
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     imap.mail.yahoo.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.4 — iCLOUD MAIL (Apple) — @icloud.com, @me.com, @mac.com
+────────────────────────────────────────────────────────────────────────
+
+    A) ACTIVAR LA AUTENTICACIÓN DE DOS FACTORES
+    .............................................
+
+    → Si usas un iPhone/iPad: Ajustes → [Tu nombre] → Contraseña y
+      seguridad → Autenticación de dos factores → Activar.
+
+    → Si usas un Mac: Preferencias del Sistema → Apple ID → Contraseña
+      y seguridad → Autenticación de dos factores → Activar.
+
+    → Si solo tienes un navegador: https://appleid.apple.com/account/manage
+      → Seguridad → Autenticación de dos factores.
+
+    B) CREAR UNA CONTRASEÑA DE APLICACIÓN
+    ......................................
+
+    PASO 1: Ve a: https://appleid.apple.com/account/manage
+
+    PASO 2: Inicia sesión con tu Apple ID.
+
+    PASO 3: En la sección "Inicio de sesión y seguridad", busca
+            "Contraseñas específicas de la app" o "App-Specific
+            Passwords".
+
+    PASO 4: Haz clic en "Generar una contraseña específica de la app".
+
+    PASO 5: Escribe una etiqueta: Inbox Bridge
+
+    PASO 6: Haz clic en "Crear". Apple te mostrará la contraseña.
+            CÓPIALA y guárdala.
+
+    C) DATOS PARA LA CONFIGURACIÓN DE iCLOUD
+    .........................................
+
+    Correo:       tu_correo@icloud.com  (o @me.com, @mac.com)
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     imap.mail.me.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.5 — ZOHO MAIL — @zoho.com, @zohomail.com, dominios propios
+────────────────────────────────────────────────────────────────────────
+
+    A) ACTIVAR LA AUTENTICACIÓN MULTIFACTOR
+    ........................................
+
+    PASO 1: Ve a: https://accounts.zoho.com/home#security/security_mfa
+
+    PASO 2: Inicia sesión y activa la autenticación multifactor (MFA).
+
+    B) CREAR UNA CONTRASEÑA DE APLICACIÓN
+    ......................................
+
+    PASO 1: Ve a: https://accounts.zoho.com/home#security/app_password
+
+    PASO 2: Haz clic en "Generate New Password" o "Generar nueva
+            contraseña".
+
+    PASO 3: Escribe: Inbox Bridge
+
+    PASO 4: Copia la contraseña generada.
+
+    C) ACTIVAR IMAP
+    ...............
+
+    PASO 1: Abre Zoho Mail → ⚙️ Configuración → "Acceso IMAP".
+    PASO 2: Activa el acceso IMAP.
+
+    → Enlace directo: https://mail.zoho.com/zm/#settings/imap
+
+    D) DATOS PARA LA CONFIGURACIÓN DE ZOHO
+    .......................................
+
+    Correo:       tu_correo@zoho.com
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     imap.zoho.com
+    Puerto:       993
+    SSL:          true (sí)
+
+    NOTA: Si tu cuenta es de Zoho EU, usa: imappro.zoho.eu
+          Si tu cuenta es de Zoho India, usa: imappro.zoho.in
+
+
+────────────────────────────────────────────────────────────────────────
+    4.6 — PROTONMAIL — @proton.me, @protonmail.com
+────────────────────────────────────────────────────────────────────────
+
+    ⚠️  ProtonMail requiere un paso extra: necesitas instalar la
+    aplicación "Proton Mail Bridge" en tu ordenador. Esta aplicación
+    crea un puente local que permite el acceso IMAP.
+
+    PASO 1: Ve a: https://proton.me/mail/bridge
+
+    PASO 2: Descarga e instala Proton Mail Bridge para tu sistema
+            operativo.
+
+    PASO 3: Abre Proton Mail Bridge e inicia sesión con tu cuenta de
+            ProtonMail.
+
+    PASO 4: Una vez conectado, la aplicación te mostrará:
+            → Un servidor: 127.0.0.1
+            → Un puerto: 1143
+            → Una contraseña generada automáticamente
+
+    PASO 5: Copia esos datos.
+
+    DATOS PARA LA CONFIGURACIÓN DE PROTONMAIL
+    ..........................................
+
+    Correo:       tu_correo@proton.me
+    Contraseña:   la que te da Proton Mail Bridge
+    Servidor:     127.0.0.1
+    Puerto:       1143
+    SSL:          false (no — el Bridge usa STARTTLS local)
+
+    ⚠️  IMPORTANTE: Proton Mail Bridge DEBE estar ejecutándose en tu
+    ordenador para que Inbox Bridge pueda conectarse.
+
+
+────────────────────────────────────────────────────────────────────────
+    4.7 — GMX MAIL — @gmx.com, @gmx.es, @gmx.net, @gmx.de
+────────────────────────────────────────────────────────────────────────
+
+    GMX no requiere contraseña de aplicación. Usa tu contraseña normal.
+    Solo necesitas activar el acceso IMAP:
+
+    PASO 1: Abre https://www.gmx.com y entra a tu cuenta.
+
+    PASO 2: Ve a ⚙️ Configuración → "POP3 & IMAP".
+
+    PASO 3: Marca la casilla "Enable access to this account via POP3
+            and IMAP".
+
+    PASO 4: Guarda los cambios.
+
+    DATOS PARA LA CONFIGURACIÓN DE GMX
+    ...................................
+
+    Correo:       tu_correo@gmx.com
+    Contraseña:   tu contraseña NORMAL de GMX
+    Servidor:     imap.gmx.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.8 — AOL MAIL — @aol.com
+────────────────────────────────────────────────────────────────────────
+
+    AOL pertenece a Yahoo, así que el proceso es casi idéntico:
+
+    A) ACTIVAR LA VERIFICACIÓN EN DOS PASOS
+    ........................................
+
+    PASO 1: Ve a: https://login.aol.com/account/security
+
+    PASO 2: Activa "Two-step verification".
+
+    B) GENERAR UNA CONTRASEÑA DE APLICACIÓN
+    ........................................
+
+    PASO 1: En la misma página de seguridad, busca "Generate app
+            password".
+
+    PASO 2: Selecciona "Other App", escribe: Inbox Bridge
+
+    PASO 3: Haz clic en "Generate" y copia la contraseña.
+
+    DATOS PARA LA CONFIGURACIÓN DE AOL
+    ...................................
+
+    Correo:       tu_correo@aol.com
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     imap.aol.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.9 — MAIL.COM — @mail.com, @email.com, @post.com, @usa.com
+────────────────────────────────────────────────────────────────────────
+
+    Mail.com no requiere contraseña de aplicación. Usa tu contraseña
+    normal. Solo necesitas activar IMAP:
+
+    PASO 1: Abre https://www.mail.com y entra a tu cuenta.
+
+    PASO 2: Ve a ⚙️ Configuración → "POP3 & IMAP".
+
+    PASO 3: Activa el acceso IMAP.
+
+    DATOS PARA LA CONFIGURACIÓN DE MAIL.COM
+    ........................................
+
+    Correo:       tu_correo@mail.com
+    Contraseña:   tu contraseña NORMAL de mail.com
+    Servidor:     imap.mail.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.10 — YANDEX MAIL — @yandex.com, @yandex.ru, @ya.ru
+────────────────────────────────────────────────────────────────────────
+
+    A) CREAR UNA CONTRASEÑA DE APLICACIÓN
+    ......................................
+
+    PASO 1: Ve a: https://id.yandex.com/security/app-passwords
+
+    PASO 2: Inicia sesión.
+
+    PASO 3: Haz clic en "Create a new password" o "Crear una nueva
+            contraseña".
+
+    PASO 4: Selecciona "Mail" y escribe: Inbox Bridge
+
+    PASO 5: Copia la contraseña generada.
+
+    B) ACTIVAR IMAP
+    ...............
+
+    PASO 1: Abre Yandex Mail → ⚙️ → "All settings" → "Email clients".
+
+    PASO 2: Marca "From the imap.yandex.com server via IMAP".
+
+    DATOS PARA LA CONFIGURACIÓN DE YANDEX
+    ......................................
+
+    Correo:       tu_correo@yandex.com
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     imap.yandex.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.11 — FASTMAIL — @fastmail.com y dominios propios
+────────────────────────────────────────────────────────────────────────
+
+    PASO 1: Inicia sesión en https://www.fastmail.com
+
+    PASO 2: Ve a Settings → Privacy & Security → Third-party apps
+            → App passwords.
+
+            Enlace directo:
+            https://www.fastmail.com/settings/security/devicekeys
+
+    PASO 3: Haz clic en "New App Password".
+
+    PASO 4: Escribe: Inbox Bridge
+
+    PASO 5: Selecciona acceso: "IMAP" (o "Mail").
+
+    PASO 6: Haz clic en "Generate Password" y cópiala.
+
+    DATOS PARA LA CONFIGURACIÓN DE FASTMAIL
+    ........................................
+
+    Correo:       tu_correo@fastmail.com
+    Contraseña:   la contraseña de aplicación que generaste
+    Servidor:     imap.fastmail.com
+    Puerto:       993
+    SSL:          true (sí)
+
+
+────────────────────────────────────────────────────────────────────────
+    4.12 — TABLA RESUMEN DE TODOS LOS PROVEEDORES
+────────────────────────────────────────────────────────────────────────
+
+    ┌─────────────────────┬──────────────────────────┬───────┬─────┐
+    │ Proveedor           │ Servidor IMAP            │ Puerto│ SSL │
+    ├─────────────────────┼──────────────────────────┼───────┼─────┤
+    │ Gmail               │ imap.gmail.com           │  993  │ sí  │
+    │ Outlook/Hotmail/Live│ outlook.office365.com    │  993  │ sí  │
+    │ Yahoo               │ imap.mail.yahoo.com      │  993  │ sí  │
+    │ iCloud (Apple)      │ imap.mail.me.com         │  993  │ sí  │
+    │ Zoho                │ imap.zoho.com            │  993  │ sí  │
+    │ ProtonMail*         │ 127.0.0.1                │ 1143  │ no  │
+    │ GMX                 │ imap.gmx.com             │  993  │ sí  │
+    │ AOL                 │ imap.aol.com             │  993  │ sí  │
+    │ Mail.com            │ imap.mail.com            │  993  │ sí  │
+    │ Yandex              │ imap.yandex.com          │  993  │ sí  │
+    │ FastMail            │ imap.fastmail.com        │  993  │ sí  │
+    │ Tutanota            │ ❌ No soporta IMAP       │   —   │  —  │
+    │ Hey.com             │ ❌ No soporta IMAP       │   —   │  —  │
+    └─────────────────────┴──────────────────────────┴───────┴─────┘
+
+    * ProtonMail requiere la aplicación "Proton Mail Bridge" corriendo
+      en tu ordenador.
+
+    ¿Tu proveedor no está en la lista?
+    → Busca en Google: "tu proveedor IMAP settings"
+    → Necesitas: servidor IMAP, puerto (normalmente 993), y si tu
+      proveedor ofrece contraseñas de aplicación, genera una.
+
+
+================================================================================
+    PARTE 5 — INSTALAR LA APLICACIÓN EN TU ORDENADOR
+================================================================================
+
+    MÉTODO A — DESCARGA DESDE GITHUB (recomendado)
+    ...............................................
+
+    PASO 1: Abre tu navegador y ve a:
+            https://github.com/SantiCode17/multi-account-mail-bot
+
+    PASO 2: Haz clic en el botón verde "<> Code".
+
+    PASO 3: Haz clic en "Download ZIP".
+
+    PASO 4: Descomprime el archivo ZIP en una carpeta de tu elección.
+            Por ejemplo: C:\InboxBridge  (Windows)
+                    o:   /home/usuario/InboxBridge  (Linux/Mac)
+
+    MÉTODO B — USANDO GIT (si tienes Git instalado)
+    ................................................
+
+    Abre una terminal (o "Símbolo del sistema" en Windows) y escribe:
+
+        git clone https://github.com/SantiCode17/multi-account-mail-bot.git
+
+    Esto creará una carpeta con todos los archivos.
+
+
+================================================================================
+    PARTE 6 — CONFIGURAR EL ARCHIVO .env
+================================================================================
+
+El archivo ".env" contiene la configuración principal de la aplicación.
+Es un archivo de texto simple.
+
+    PASO 1: Abre la carpeta donde descomprimiste o descargaste la
+            aplicación.
+
+    PASO 2: Busca un archivo llamado ".env". Si no existe, crea uno
+            nuevo con un editor de texto (Bloc de notas, TextEdit, etc.)
+
+            ⚠️  En Windows, los archivos que empiezan por punto (.)
+            pueden estar ocultos. Para verlos: Explorador de archivos →
+            Vista → Mostrar → Elementos ocultos.
+
+    PASO 3: Escribe (o edita) el contenido del archivo .env con lo
+            siguiente:
+
+    ───────────────────── CONTENIDO DEL ARCHIVO .env ─────────────────
+
+    # Telegram Bot Configuration
+    TELEGRAM_BOT_TOKEN=AQUI_PON_TU_TOKEN_DE_BOTFATHER
+    TELEGRAM_CHAT_ID=AQUI_PON_TU_CHAT_ID
+
+    # Monitoring Configuration
+    CHECK_INTERVAL_SECONDS=10
+    MAX_CONCURRENT_CONNECTIONS=20
+    BATCH_SIZE=50
+    EMAIL_BODY_PREVIEW_LENGTH=500
+
+    # Database
+    DATABASE_PATH=data/seen_emails.db
+
+    # Logging
+    LOG_LEVEL=INFO
+    LOG_FILE_PATH=logs/email_monitor.log
+
+    # Accounts Configuration
+    ACCOUNTS_CONFIG_PATH=config/accounts.json
+
+    ──────────────────────────────────────────────────────────────────
+
+    ¿Qué significa cada línea?
+
+    → TELEGRAM_BOT_TOKEN: El token que te dio BotFather en la Parte 2.
+      Ejemplo: 8641449158:AAH-gzI76KzUqFZbF9P-BwPOFgKGsgOMt5E
+
+    → TELEGRAM_CHAT_ID: El número que obtuviste en la Parte 3.
+      Ejemplo: 1792370231
+
+    → CHECK_INTERVAL_SECONDS: Cada cuántos segundos se revisa el correo.
+      10 = se revisa cada 10 segundos (recomendado).
+      Puedes poner 5 para que sea aún más rápido, o 30 si prefieres
+      menos consumo de recursos.
+
+    → Las demás líneas déjalas como están. No necesitas cambiarlas.
+
+    PASO 4: Guarda el archivo.
+
+
+================================================================================
+    PARTE 7 — AÑADIR TUS CUENTAS DE CORREO AL ARCHIVO accounts.json
+================================================================================
+
+Este archivo le dice a la aplicación QUÉ cuentas de correo vigilar.
+
+    PASO 1: Abre la carpeta de la aplicación y ve a la subcarpeta
+            "config".
+
+    PASO 2: Abre el archivo "accounts.json" con un editor de texto
+            (Bloc de notas, TextEdit, etc.).
+
+    PASO 3: Edita el contenido siguiendo esta estructura:
+
+    ─────────── EJEMPLO CON UNA SOLA CUENTA (Gmail) ─────────────────
+
+    {
+      "accounts": [
+        {
+          "email": "mi_correo@gmail.com",
+          "password": "abcd efgh ijkl mnop",
+          "imap_server": "imap.gmail.com",
+          "imap_port": 993,
+          "use_ssl": true
+        }
+      ]
+    }
+
+    ──────────────────────────────────────────────────────────────────
+
+    → "email": tu dirección de correo completa, entre comillas.
+    → "password": la CONTRASEÑA DE APLICACIÓN (no la normal), entre
+      comillas. Incluye los espacios si los tiene.
+    → "imap_server": el servidor IMAP de tu proveedor (ver tabla de
+      la Parte 4.12), entre comillas.
+    → "imap_port": el puerto, normalmente 993. SIN comillas (es número).
+    → "use_ssl": true o false, SIN comillas. Normalmente es true.
+
+    ─────── EJEMPLO CON VARIAS CUENTAS (Gmail + Outlook + Yahoo) ────
+
+    {
+      "accounts": [
+        {
+          "email": "mi_gmail@gmail.com",
+          "password": "abcd efgh ijkl mnop",
+          "imap_server": "imap.gmail.com",
+          "imap_port": 993,
+          "use_ssl": true
+        },
+        {
+          "email": "mi_outlook@hotmail.com",
+          "password": "xyzw abcd efgh ijkl",
+          "imap_server": "outlook.office365.com",
+          "imap_port": 993,
+          "use_ssl": true
+        },
+        {
+          "email": "mi_yahoo@yahoo.com",
+          "password": "mnop qrst uvwx yzab",
+          "imap_server": "imap.mail.yahoo.com",
+          "imap_port": 993,
+          "use_ssl": true
+        }
+      ]
+    }
+
+    ──────────────────────────────────────────────────────────────────
+
+    ⚠️  REGLAS IMPORTANTES para que el archivo sea válido:
+
+    1. Cada cuenta va entre llaves { }
+    2. Las cuentas se separan por COMAS (mira la coma después de cada })
+    3. La ÚLTIMA cuenta NO lleva coma después del }
+    4. Todo el contenido va dentro de "accounts": [ ... ]
+    5. Los textos van entre "comillas dobles"
+    6. Los números (993) y true/false NO llevan comillas
+
+    ⚠️  Si algo está mal escrito, la aplicación no arrancará y te
+    dirá que hay un error en el JSON. Revisa bien las comas y comillas.
+
+    PASO 4: Guarda el archivo.
+
+
+================================================================================
+    PARTE 8 — EJECUTAR LA APLICACIÓN
+================================================================================
+
+    MÉTODO A — CON EL SCRIPT DE INICIO (más fácil)
+    ...............................................
+
+    → EN LINUX O MAC:
+
+    PASO 1: Abre una terminal.
+
+    PASO 2: Navega a la carpeta de la aplicación:
+            cd /ruta/a/tu/carpeta/inboxBridge
+
+    PASO 3: Dale permisos de ejecución al script (solo la primera vez):
+            chmod +x start.sh
+
+    PASO 4: Ejecuta:
+            ./start.sh
+
+    → EN WINDOWS:
+
+    PASO 1: Abre el "Símbolo del sistema" (cmd) o PowerShell.
+
+    PASO 2: Navega a la carpeta:
+            cd C:\ruta\a\tu\carpeta\inboxBridge
+
+    PASO 3: Ejecuta:
+            python -m venv venv
+            venv\Scripts\activate
+            pip install -r requirements.txt
+            python run.py
+
+    El script automáticamente:
+    ✔ Comprueba que tienes Python instalado
+    ✔ Crea un entorno virtual (una caja aislada para la aplicación)
+    ✔ Instala las dependencias necesarias
+    ✔ Verifica que la configuración es correcta
+    ✔ Inicia el monitor
+
+    Si todo va bien, verás en la terminal algo como:
+
+        ╔══════════════════════════════════════════╗
+        ║        📬  INBOX BRIDGE  📬              ║
+        ║   Multi-Account Email Monitor Bot        ║
+        ╚══════════════════════════════════════════╝
+
+        ✔ Python 3.12 detected
+        ✔ Virtual environment exists
+        ✔ Dependencies installed
+        ✔ Configuration valid
+        ✔ 1 email account(s) configured
+        ✔ Runtime directories ready
+
+        Starting Inbox Bridge...
+
+    Y en Telegram recibirás un mensaje del bot diciendo:
+    "✅ Inbox Bridge is now online"
+
+    MÉTODO B — CON DOCKER (avanzado — si tienes Docker instalado)
+    .............................................................
+
+    PASO 1: Abre una terminal en la carpeta de la aplicación.
+
+    PASO 2: Ejecuta:
+            docker compose up -d
+
+    Esto creará un contenedor que se ejecuta en segundo plano y se
+    reinicia automáticamente si el ordenador se reinicia.
+
+    Para ver los logs:
+            docker compose logs -f
+
+    Para detenerlo:
+            docker compose down
+
+
+    EJECUTAR EN SEGUNDO PLANO (que no se cierre al cerrar la terminal)
+    .................................................................
+
+    Si estás en Linux o Mac y quieres que siga funcionando incluso
+    después de cerrar la terminal:
+
+        nohup python3 run.py > /dev/null 2>&1 &
+
+    Para ver si sigue corriendo:
+        ps aux | grep run.py
+
+    Para detenerlo:
+        kill $(pgrep -f "python3 run.py")
+
+
+================================================================================
+    PARTE 9 — USAR EL BOT DE TELEGRAM
+================================================================================
+
+Una vez que la aplicación esté corriendo, abre Telegram y busca tu bot.
+
+    Escribe /start para ver el menú principal.
+
+    El bot tiene 4 botones:
+
+    📊 Status    → Te muestra si el monitor está activo, cuántas cuentas
+                   vigila y cuántos ciclos ha completado.
+
+    📧 Accounts  → Te muestra la lista de cuentas de correo configuradas
+                   y cuántos emails se han procesado en cada una.
+
+    📋 History   → Te muestra los últimos 10 emails que se han detectado.
+
+    ❓ Help      → Te muestra información de ayuda.
+
+    Cuando llegue un correo nuevo a cualquiera de tus cuentas, recibirás
+    un mensaje como este:
+
+    ━━━━━━━━━━━━━━━━━━━━━━
+    📨 New Email Received
+    ━━━━━━━━━━━━━━━━━━━━━━
+    📧 Account: mi_correo@gmail.com
+    👤 From: remitente@ejemplo.com
+    📌 Subject: Asunto del correo
+    📅 Date: 13 Mar 2026, 15:30
+    ─────────────────────
+    Vista previa del contenido del correo...
+    ━━━━━━━━━━━━━━━━━━━━━━
+
+
+================================================================================
+    PARTE 10 — SOLUCIÓN DE PROBLEMAS FRECUENTES
+================================================================================
+
+    PROBLEMA: "No recibo notificaciones en Telegram"
+    ................................................
+
+    1. ¿Has enviado /start a tu bot en Telegram? Es OBLIGATORIO hacerlo
+       al menos una vez antes de que el bot pueda enviarte mensajes.
+
+    2. ¿El Chat ID es correcto? Revisa el archivo .env y comprueba que
+       TELEGRAM_CHAT_ID contiene el número correcto (ver Parte 3).
+
+    3. ¿La aplicación está corriendo? Revisa la terminal o los logs.
+
+    4. Envíate un correo de prueba a ti mismo y espera 10 segundos.
+
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+    PROBLEMA: "Error de autenticación IMAP" o "LOGIN failed"
+    ........................................................
+
+    1. ¿Estás usando la CONTRASEÑA DE APLICACIÓN y no tu contraseña
+       normal? Este es el error más común.
+
+    2. ¿Copiaste la contraseña correctamente? Incluye los espacios.
+
+    3. ¿Activaste la verificación en dos pasos ANTES de crear la
+       contraseña de aplicación?
+
+    4. ¿Activaste el acceso IMAP en la configuración de tu correo?
+
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+    PROBLEMA: "Error en accounts.json" o "JSON decode error"
+    ........................................................
+
+    1. Revisa que las comillas son rectas " y no tipográficas " ".
+       (Esto pasa si editas el archivo con Word o procesadores de texto
+        con formato. Usa SIEMPRE un editor de texto plano como:
+        Bloc de notas (Windows), TextEdit en formato texto (Mac), o
+        cualquier editor de código como VS Code o Notepad++.)
+
+    2. Revisa las comas: cada cuenta lleva una coma al final EXCEPTO
+       la última.
+
+    3. Revisa que no falte ninguna llave { } o corchete [ ].
+
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+    PROBLEMA: "La aplicación se cierra cuando cierro la terminal"
+    .............................................................
+
+    → Usa el método de segundo plano descrito en la Parte 8:
+      nohup python3 run.py > /dev/null 2>&1 &
+
+    → O usa Docker (ver Parte 8, Método B).
+
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+    PROBLEMA: "Connection timeout" o "socket error"
+    ................................................
+
+    1. ¿Tienes conexión a Internet?
+
+    2. ¿El servidor IMAP y el puerto son correctos? Revisa la tabla
+       de la Parte 4.12.
+
+    3. ¿Tu firewall o antivirus está bloqueando la conexión? Prueba
+       a desactivarlo temporalmente.
+
+    4. Algunos proveedores de Internet (especialmente en redes de
+       trabajo o universidad) bloquean el puerto 993. Prueba con
+       una red diferente.
+
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+    PROBLEMA: "Quiero empezar de cero / resetear todo"
+    ..................................................
+
+    → Borra la base de datos:
+      rm -f data/seen_emails.db   (Linux/Mac)
+      del data\seen_emails.db     (Windows)
+
+    → Reinicia la aplicación. El primer arranque volverá a marcar
+      todos los correos existentes como "ya vistos" y solo te
+      notificará de los nuevos.
+
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+    ¿TIENES OTRO PROBLEMA?
+
+    → Revisa los logs en: logs/email_monitor.log
+      (Ábrelo con cualquier editor de texto para ver qué errores hay)
+
+    → Abre un "issue" en GitHub:
+      https://github.com/SantiCode17/multi-account-mail-bot/issues
+
+
+================================================================================
+    ENLACES RÁPIDOS DE REFERENCIA
+================================================================================
+
+    Python (descargar):
+    https://www.python.org/downloads/
+
+    BotFather (crear bot de Telegram):
+    https://t.me/BotFather
+
+    @userinfobot (obtener tu Chat ID):
+    https://t.me/userinfobot
+
+    Gmail — Contraseñas de aplicación:
+    https://myaccount.google.com/apppasswords
+
+    Gmail — Configuración IMAP:
+    https://mail.google.com/mail/#settings/fwdandpop
+
+    Outlook/Hotmail — Seguridad de cuenta:
+    https://account.microsoft.com/security
+
+    Outlook/Hotmail — Contraseñas de aplicación:
+    https://account.live.com/proofs/AppPassword
+
+    Yahoo — Seguridad de cuenta:
+    https://login.yahoo.com/account/security
+
+    iCloud — Gestión de Apple ID:
+    https://appleid.apple.com/account/manage
+
+    Zoho — Contraseñas de aplicación:
+    https://accounts.zoho.com/home#security/app_password
+
+    ProtonMail Bridge:
+    https://proton.me/mail/bridge
+
+    Yandex — Contraseñas de aplicación:
+    https://id.yandex.com/security/app-passwords
+
+    FastMail — Contraseñas de aplicación:
+    https://www.fastmail.com/settings/security/devicekeys
+
+    Repositorio del proyecto en GitHub:
+    https://github.com/SantiCode17/multi-account-mail-bot
+
+    Docker (si quieres usar contenedores):
+    https://www.docker.com/products/docker-desktop/
+
+
+================================================================================
+                    FIN DE LA GUÍA DE INSTALACIÓN
+================================================================================
+
+    ¡Eso es todo! Si has seguido todos los pasos, deberías tener
+    Inbox Bridge funcionando y recibiendo notificaciones de tus
+    correos electrónicos directamente en Telegram.
+
+    Recuerda: si añades una cuenta nueva al archivo accounts.json,
+    simplemente reinicia la aplicación para que empiece a vigilarla.
+
+================================================================================
