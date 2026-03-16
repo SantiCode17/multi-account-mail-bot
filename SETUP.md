@@ -226,7 +226,7 @@ Edit `config/accounts.json`. Each account requires an **app password** (not your
 
 ---
 
-## 6. Run
+# Run
 
 ```bash
 # First time (install dependencies)
@@ -246,7 +246,50 @@ nohup python3 run.py > /dev/null 2>&1 &
 docker compose up -d
 ```
 
-## 7. Useful Commands
+## 7. Auto-Start as a System Service (Linux only)
+
+To run the bot **automatically at startup** and **keep it running forever** (restarts if it crashes):
+
+### Setup (one-time)
+
+```bash
+chmod +x deployment/install-service.sh
+sudo deployment/install-service.sh
+```
+
+This script will:
+- ✔ Verify all configuration is correct
+- ✔ Create a systemd service file
+- ✔ Enable it to start on boot
+- ✔ Start it immediately
+
+### Service Commands
+
+```bash
+# Check status
+systemctl status inbox-bridge-${USER}.service
+
+# View live logs
+journalctl -u inbox-bridge-${USER}.service -f
+
+# Stop the service
+systemctl stop inbox-bridge-${USER}.service
+
+# Start the service
+systemctl start inbox-bridge-${USER}.service
+
+# Restart the service
+systemctl restart inbox-bridge-${USER}.service
+
+# Uninstall the service
+sudo systemctl disable inbox-bridge-${USER}.service
+sudo rm /etc/systemd/system/inbox-bridge-${USER}.service
+sudo systemctl daemon-reload
+```
+
+---
+
+## 8. Useful Commands
 
 ```bash
 # Check if running
