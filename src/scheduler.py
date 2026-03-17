@@ -30,16 +30,36 @@ class MonitorScheduler:
         self._running = True
         self._last_cleanup = time.monotonic()
         self._bot_handlers = BotHandlers(config, self._db)
+        # Accounts that failed auth are disabled for the session
+        self._disabled_accounts: set[str] = set()
 
     # ── Account checking ────────────────────────────────────────────
 
     async def _check_account(self, account: EmailAccount) -> list[EmailMessage]:
-        """Check a single account, guarded by the concurrency semaphore."""
+        """Check a single account, guarded by the concurrency semaphore.
+
+        If authentication fails, the account is silently disabled for
+        the rest of the session (no repeated retries every cycle).
+        """
+        if account.email in self._disabled_accounts:
+            return []
+
         async with self._semaphore:
             try:
                 return await self._monitor.fetch_new_emails(account)
             except Exception as exc:
-                logger.error("Unhandled error checking {email}: {err}", email=account.email, err=exc)
+                err_lower = str(exc).lower()
+                # Auth failures → disable permanently for this session
+                if any(kw in err_lower for kw in (
+                    "invalid credentials", "authentication failed",
+                    "authenticationfailed", "login failed", "login fail",
+                    "authenticate failed", "xoauth2", "application-specific",
+                    "web login required", "less secure",
+                )):
+                    self._disabled_accounts.add(account.email)
+                    # Logged once, never again
+                    return []
+                logger.error("Error checking {email}: {err}", email=account.email, err=exc)
                 return []
 
     async def _run_cycle(self) -> None:
@@ -50,17 +70,20 @@ class MonitorScheduler:
             logger.error("Failed to reload accounts config: {err}", err=exc)
             accounts = self._config.accounts
 
-        total_accounts = len(accounts)
-        if total_accounts == 0:
-            logger.warning("No email accounts configured — skipping cycle")
+        # Filter out disabled accounts entirely
+        active = [a for a in accounts if a.email not in self._disabled_accounts]
+        disabled_count = len(accounts) - len(active)
+
+        if not active:
+            logger.warning("No active accounts — all {n} disabled", n=len(accounts))
             return
 
         batch_size = self._config.monitor.batch_size
         all_new: list[EmailMessage] = []
         errors = 0
 
-        for batch_start in range(0, total_accounts, batch_size):
-            batch = accounts[batch_start : batch_start + batch_size]
+        for batch_start in range(0, len(active), batch_size):
+            batch = active[batch_start : batch_start + batch_size]
             tasks = [asyncio.create_task(self._check_account(acct)) for acct in batch]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -70,20 +93,26 @@ class MonitorScheduler:
                 elif isinstance(result, list):
                     all_new.extend(result)
 
-            if batch_start + batch_size < total_accounts:
+            if batch_start + batch_size < len(active):
                 await asyncio.sleep(0.5)
+
+        # Count newly disabled this cycle
+        new_disabled = len(accounts) - len(active) - disabled_count + (
+            len([a for a in active if a.email in self._disabled_accounts])
+        )
 
         if all_new:
             sent = await self._notifier.send_notifications(all_new)
             self._bot_handlers.add_notifications(sent)
             logger.info(
-                "Cycle complete: {accts} accounts | {new} new | {sent} sent | {errs} errors",
-                accts=total_accounts, new=len(all_new), sent=sent, errs=errors,
+                "Cycle: {active} active | {dis} disabled | {new} new emails | {sent} sent",
+                active=len(active) - new_disabled, dis=len(self._disabled_accounts),
+                new=len(all_new), sent=sent,
             )
         else:
             logger.info(
-                "Cycle complete: {accts} accounts | no new emails | {errs} errors",
-                accts=total_accounts, errs=errors,
+                "Cycle: {active} active | {dis} disabled | no new emails",
+                active=len(active) - new_disabled, dis=len(self._disabled_accounts),
             )
 
     # ── Seed (first run) ────────────────────────────────────────────
@@ -108,18 +137,32 @@ class MonitorScheduler:
         logger.info("First run detected — seeding {n} account(s) with real Message-IDs", n=len(accounts))
 
         total_seeded = 0
+        disabled_during_seed = 0
         for acct in accounts:
             try:
                 count = await self._monitor.seed_existing_emails(acct)
                 if count:
-                    logger.info("Seeded {count} real Message-IDs for {email}", count=count, email=acct.email)
+                    logger.info("Seeded {count} Message-IDs for {email}", count=count, email=acct.email)
                     total_seeded += count
-                else:
-                    logger.info("No UNSEEN emails to seed for {email}", email=acct.email)
             except Exception as exc:
-                logger.warning("Seed failed for {email}: {err}", email=acct.email, err=exc)
+                err_lower = str(exc).lower()
+                if any(kw in err_lower for kw in (
+                    "invalid credentials", "authentication failed",
+                    "authenticationfailed", "login failed", "login fail",
+                    "authenticate failed", "xoauth2", "application-specific",
+                    "web login required", "less secure",
+                )):
+                    self._disabled_accounts.add(acct.email)
+                    disabled_during_seed += 1
+                else:
+                    logger.debug("Seed failed for {email}: {err}", email=acct.email, err=exc)
 
-        logger.info("Seed complete — {n} real Message-IDs recorded", n=total_seeded)
+        logger.info(
+            "Seed complete — {n} Message-IDs | {ok} accounts OK | {dis} disabled (auth failed)",
+            n=total_seeded,
+            ok=len(accounts) - disabled_during_seed,
+            dis=disabled_during_seed,
+        )
 
     # ── Cleanup ─────────────────────────────────────────────────────
 
@@ -186,9 +229,12 @@ class MonitorScheduler:
 
         # Send startup notification
         account_count = len(self._config.accounts)
+        disabled = len(self._disabled_accounts)
+        active = account_count - disabled
         await self._notifier.send_raw(
             f"✅ <b>Inbox Bridge is now online</b>\n\n"
-            f"📧 Monitoring <b>{account_count}</b> account(s)\n"
+            f"📧 Monitoring <b>{active}</b> active account(s)"
+            f"{f' ({disabled} disabled — auth failed)' if disabled else ''}\n"
             f"⏰ Check interval: <b>{self._config.monitor.check_interval}s</b>\n\n"
             f"Tap /start to open the menu."
         )
