@@ -7,10 +7,11 @@ Monitors **200+ email accounts** simultaneously via IMAP and sends instant Teleg
 ## How It Works
 
 1. The system connects to all configured email accounts via IMAP
-2. Every 60 seconds (configurable), it checks each account for new unread emails
-3. When a new email is found, it sends a formatted Telegram notification instantly
-4. A SQLite database prevents duplicate notifications — even across restarts
-5. The Telegram bot also responds to interactive commands (`/status`, `/history`, etc.)
+2. Every 10 seconds (configurable), it checks each account for new unread emails
+3. Gmail accounts with 2FA use **OAuth2** automatically; all others use password login
+4. When a new email is found, it sends a formatted Telegram notification instantly
+5. A SQLite database prevents duplicate notifications — even across restarts
+6. The Telegram bot also responds to interactive commands (`/status`, `/history`, etc.)
 
 ## Quick Start (One Command)
 
@@ -61,7 +62,7 @@ TELEGRAM_CHAT_ID=your_chat_id_here
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather | *(required)* |
 | `TELEGRAM_CHAT_ID` | Chat or group ID to receive notifications | *(required)* |
-| `CHECK_INTERVAL_SECONDS` | Seconds between monitoring cycles | `60` |
+| `CHECK_INTERVAL_SECONDS` | Seconds between monitoring cycles | `10` |
 | `MAX_CONCURRENT_CONNECTIONS` | Simultaneous IMAP connections | `20` |
 | `BATCH_SIZE` | Accounts processed per batch | `50` |
 | `EMAIL_BODY_PREVIEW_LENGTH` | Max characters in body preview | `500` |
@@ -103,7 +104,7 @@ Edit `config/accounts.json`:
 
 | Provider | IMAP Server | Password |
 |---|---|---|
-| **Gmail** | `imap.gmail.com` | [App Password](https://myaccount.google.com/apppasswords) (enable 2FA first) |
+| **Gmail** | `imap.gmail.com` | OAuth2 for 2FA (run `python auth_setup.py`) or regular password |
 | **Outlook / Hotmail** | `outlook.office365.com` | Your regular password |
 | **Yahoo** | `imap.mail.yahoo.com` | [App Password](https://login.yahoo.com/account/security) |
 | **Custom domain** | Ask your hosting provider | Your email password |
@@ -210,17 +211,20 @@ inbox-bridge/
 │   ├── bot_handlers.py      # Interactive bot commands
 │   ├── database.py          # SQLite for deduplication
 │   ├── scheduler.py         # Orchestrator
+│   ├── oauth_manager.py     # Gmail OAuth2 token management
 │   └── utils.py             # Text utilities
 ├── config/
 │   └── accounts.json        # Email accounts list
 ├── deployment/
 │   └── email-monitor.service # Systemd unit file
+├── auth_setup.py            # One-time OAuth2 token generator
 ├── .env.example             # Environment template
 ├── start.sh                 # One-command launcher
 ├── run.py                   # Python entry point
 ├── requirements.txt         # Dependencies
 ├── Dockerfile               # Docker image
 ├── docker-compose.yml       # Docker Compose
+├── SETUP.md                 # Full setup guide
 └── README.md                # This file
 ```
 
@@ -253,7 +257,7 @@ docker compose up -d
 | Problem | Solution |
 |---|---|
 | `PermissionError` on logs | Delete `logs/` and `data/` folders, let the app recreate them |
-| `Authentication failed` | Check your password. Gmail requires an App Password. |
+| `Authentication failed` | Gmail 2FA → run `python auth_setup.py`. Others → check password. |
 | `Connection timeout` | Verify IMAP server and port. Check your firewall. |
 | `Telegram not sending` | Verify bot token and chat ID. Make sure the bot is in the chat. |
 | `No new emails` | Emails must be UNSEEN on the server. Already-read emails are skipped. |

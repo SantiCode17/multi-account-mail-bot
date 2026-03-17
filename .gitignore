@@ -23,9 +23,7 @@ ENV/
 
 # Configuration & Credentials
 config/accounts.json
-config/.oauth_tokens/
-
-config/accounts.json
+config/credentials/
 
 # IDE
 .vscode/

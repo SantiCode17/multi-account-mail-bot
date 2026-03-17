@@ -68,49 +68,52 @@ Edit `config/accounts.json`. The system automatically handles authentication:
 
 ### 4.1 Gmail OAuth2 Setup (For 2FA Accounts)
 
-If your Gmail accounts have **2FA enabled**, the system uses **OAuth2** automatically without requiring app passwords or account changes.
+If your Gmail accounts have **2FA enabled**, the system uses **OAuth2** automatically — no app passwords or account changes needed.
 
-#### Step 1: Get OAuth2 Credentials
+#### Step 1: Create a Google Cloud Project
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or use existing one)
-3. Enable the **Gmail API**:
-   - Go to "APIs & Services" → "Library"
-   - Search for "Gmail API"
-   - Click "Enable"
-4. Create OAuth 2.0 credentials:
-   - Go to "APIs & Services" → "Credentials"
-   - Click "Create Credentials" → "OAuth 2.0 Client ID"
-   - Choose "Desktop application"
-   - Download the JSON file
-   - Open it and copy:
-     - `client_id`
-     - `client_secret`
+2. Click **Select a project** → **New Project**
+3. Name it (e.g. `inbox-bridge`) → **Create**
 
-#### Step 2: Add Credentials to `.env`
+#### Step 2: Enable the Gmail API
 
-Update your `.env` file with:
+1. Go to **APIs & Services** → **Library**
+2. Search for **Gmail API** → Click **Enable**
+
+#### Step 3: Configure the OAuth Consent Screen
+
+1. Go to **APIs & Services** → **OAuth consent screen**
+2. Choose **External** → **Create**
+3. Fill in the app name (e.g. `inbox-bridge`) and your email
+4. Click through the rest (no scopes needed here) → **Save**
+5. Under **Test users**, add every Gmail address you want to monitor
+
+#### Step 4: Create OAuth2 Credentials
+
+1. Go to **APIs & Services** → **Credentials**
+2. Click **Create Credentials** → **OAuth 2.0 Client ID**
+3. Application type: **Desktop app**
+4. Name it anything → **Create**
+5. Copy the **Client ID** and **Client Secret**
+
+#### Step 5: Add Credentials to `.env`
 
 ```env
-GMAIL_CLIENT_ID=your_client_id_from_google_console
-GMAIL_CLIENT_SECRET=your_client_secret_from_google_console
+GMAIL_CLIENT_ID=your_client_id_here
+GMAIL_CLIENT_SECRET=your_client_secret_here
 ```
 
-#### Step 3: Generate OAuth2 Tokens
+#### Step 6: Generate Tokens
 
-Run this **one time** to authenticate all Gmail accounts:
+Run once to authorise all Gmail accounts (a browser opens for each):
 
 ```bash
+source venv/bin/activate
 python auth_setup.py
 ```
 
-This script will:
-1. Show all Gmail accounts
-2. Ask which ones to authenticate
-3. Open a browser for each account (you need to authorize once)
-4. Save tokens automatically (won't expire or require re-entry)
-
-> The tokens are stored in `config/.oauth_tokens/` (already in `.gitignore` for security)
+Tokens are saved in `config/credentials/` and refresh automatically.
 
 ### 4.2 Account Configuration
 
