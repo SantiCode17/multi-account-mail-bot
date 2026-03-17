@@ -61,7 +61,18 @@ class EmailMonitor:
             # No token → fall through to password (will likely fail
             # for 2FA accounts, but lets non-2FA ones still work).
 
-        conn.login(account.email, account.password)
+        # Plain password login (supports non-ASCII passwords)
+        password = account.password
+        try:
+            conn.login(account.email, password)
+        except imaplib.IMAP4.error:
+            # Retry with UTF-8 encoded password for non-ASCII chars
+            if any(ord(c) > 127 for c in password):
+                conn2 = imaplib.IMAP4_SSL(account.imap_server, account.imap_port) if account.use_ssl else imaplib.IMAP4(account.imap_server, account.imap_port)
+                conn2._encoding = "utf-8"
+                conn2.login(account.email, password)
+                return conn2
+            raise
         return conn
 
     @staticmethod
@@ -202,31 +213,20 @@ class EmailMonitor:
             return results
 
         except imaplib.IMAP4.error as exc:
-            logger.error("IMAP error for {email}: {err}", email=account.email, err=exc)
-            return []
+            raise  # Let scheduler handle auth failures
         except socket.timeout:
-            logger.warning(
-                "Connection timeout for {email} ({server})",
-                email=account.email, server=account.imap_server,
+            logger.debug(
+                "Timeout for {email}",
+                email=account.email,
             )
             return []
-        except socket.gaierror as exc:
-            logger.error(
-                "DNS resolution failed for {server} ({email}): {err}",
-                server=account.imap_server, email=account.email, err=exc,
-            )
+        except socket.gaierror:
             return []
         except ConnectionRefusedError:
-            logger.error(
-                "Connection refused by {server}:{port} ({email})",
-                server=account.imap_server, port=account.imap_port, email=account.email,
-            )
             return []
-        except OSError as exc:
-            logger.error("OS/network error for {email}: {err}", email=account.email, err=exc)
+        except OSError:
             return []
-        except Exception as exc:
-            logger.error("Unexpected error checking {email}: {err}", email=account.email, err=exc)
+        except Exception:
             return []
         finally:
             self._safe_logout(conn)
