@@ -3,3 +3,5 @@ python-dotenv==1.0.1
 beautifulsoup4==4.12.3
 loguru==0.7.3
 aiosqlite==0.20.0
+google-auth-oauthlib==1.2.0
+google-auth==2.26.2

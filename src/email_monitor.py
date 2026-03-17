@@ -9,6 +9,7 @@ from loguru import logger
 from src.database import Database
 from src.email_parser import EmailParser
 from src.models import EmailAccount, EmailMessage
+from src.oauth_manager import OAuthTokenManager, GmailOAuthClient
 
 IMAP_TIMEOUT_SECONDS = 15
 
@@ -35,13 +36,75 @@ class EmailMonitor:
 
     @staticmethod
     def _connect_imap(account: EmailAccount) -> imaplib.IMAP4_SSL | imaplib.IMAP4:
-        """Create and return an authenticated IMAP connection (blocking)."""
+        """Create and return an authenticated IMAP connection (blocking).
+        
+        For Gmail accounts: automatically uses OAuth2 token if available,
+        falls back to password authentication.
+        
+        For other providers: uses password authentication directly.
+        """
         socket.setdefaulttimeout(IMAP_TIMEOUT_SECONDS)
+        
+        # Try OAuth2 first for Gmail accounts
+        if "gmail" in account.imap_server.lower():
+            oauth_token = OAuthTokenManager.load_token(account.email)
+            if oauth_token and oauth_token.get("access_token"):
+                try:
+                    return EmailMonitor._connect_imap_oauth2(account, oauth_token)
+                except Exception as e:
+                    logger.warning(
+                        "OAuth2 authentication failed for {email}, falling back to password: {e}",
+                        email=account.email,
+                        e=e,
+                    )
+        
+        # Fall back to password authentication
+        return EmailMonitor._connect_imap_password(account)
+
+    @staticmethod
+    def _connect_imap_password(
+        account: EmailAccount,
+    ) -> imaplib.IMAP4_SSL | imaplib.IMAP4:
+        """Connect using standard password authentication."""
         if account.use_ssl:
             conn = imaplib.IMAP4_SSL(account.imap_server, account.imap_port)
         else:
             conn = imaplib.IMAP4(account.imap_server, account.imap_port)
-        conn.login(account.email, account.password)
+
+        try:
+            conn.login(account.email, account.password)
+        except imaplib.IMAP4.error as e:
+            conn.logout()
+            raise ValueError(
+                f"IMAP login failed for {account.email}. "
+                f"For Gmail with 2FA: Run `python auth_setup.py` to generate OAuth2 tokens. "
+                f"Error: {str(e)}"
+            ) from e
+        return conn
+
+    @staticmethod
+    def _connect_imap_oauth2(
+        account: EmailAccount, oauth_token: dict
+    ) -> imaplib.IMAP4_SSL | imaplib.IMAP4:
+        """Connect using OAuth2 authentication."""
+        access_token = oauth_token.get("access_token")
+        if not access_token:
+            raise ValueError(f"No access token for {account.email}")
+
+        # Build XOAuth2 authentication string
+        auth_string = f"user={account.email}\x01auth=Bearer {access_token}\x01\x01"
+
+        conn = imaplib.IMAP4_SSL(account.imap_server, account.imap_port)
+        try:
+            conn.authenticate("XOAUTH2", lambda x: auth_string.encode())
+        except imaplib.IMAP4.error as e:
+            conn.logout()
+            raise ValueError(
+                f"XOAuth2 authentication failed for {account.email}. "
+                f"Token may be expired. Run `python auth_setup.py` to refresh. "
+                f"Error: {str(e)}"
+            ) from e
+
         return conn
 
     @staticmethod

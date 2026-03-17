@@ -18,6 +18,14 @@ ENV/
 
 # Environment variables
 .env
+.env.local
+.env.*.local
+
+# Configuration & Credentials
+config/accounts.json
+config/.oauth_tokens/
+
+config/accounts.json
 
 # IDE
 .vscode/

@@ -126,3 +126,4 @@ echo "  Stop service:     systemctl stop inbox-bridge-${CURRENT_USER}.service"
 echo "  Start service:    systemctl start inbox-bridge-${CURRENT_USER}.service"
 echo "  Uninstall:        sudo systemctl disable inbox-bridge-${CURRENT_USER}.service && sudo rm $SERVICE_FILE && sudo systemctl daemon-reload"
 echo ""
+                    
