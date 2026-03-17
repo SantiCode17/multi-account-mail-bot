@@ -1,199 +1,112 @@
-"""OAuth2 token manager for Gmail accounts with 2FA.
+"""Minimal OAuth2 manager for Gmail IMAP access.
 
-Handles token storage, refresh, and authentication without requiring
-users to change their account settings.
+Handles the full lifecycle: authorize → store → load → auto-refresh.
+Tokens are persisted in ``config/credentials/`` (one JSON per account).
 """
 
 import json
-import asyncio
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Optional
 
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from loguru import logger
 
-# OAuth2 token cache file
-TOKEN_CACHE_DIR = Path("config/.oauth_tokens")
-TOKEN_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+SCOPES = ["https://mail.google.com/"]
+TOKEN_DIR = Path("config/credentials")
+TOKEN_DIR.mkdir(parents=True, exist_ok=True)
 
 
-class OAuthTokenManager:
-    """Manages OAuth2 tokens for Gmail accounts."""
+def _token_path(email: str) -> Path:
+    safe = email.replace("@", "_at_").replace(".", "_")
+    return TOKEN_DIR / f"{safe}.json"
 
-    @staticmethod
-    def get_token_file(email: str) -> Path:
-        """Get the token file path for an email."""
-        safe_email = email.replace("@", "_at_").replace(".", "_")
-        return TOKEN_CACHE_DIR / f"{safe_email}.json"
 
-    @staticmethod
-    def load_token(email: str) -> Optional[dict]:
-        """Load cached OAuth2 token for an email."""
-        token_file = OAuthTokenManager.get_token_file(email)
-        if not token_file.exists():
-            return None
-
-        try:
-            with open(token_file, "r") as f:
-                token_data = json.load(f)
-                # Check if token has expired
-                if "expires_at" in token_data:
-                    expires_at = datetime.fromisoformat(token_data["expires_at"])
-                    if datetime.now() > expires_at:
-                        logger.warning(
-                            "OAuth token expired for {email}, needs refresh",
-                            email=email,
-                        )
-                        return None
-                return token_data
-        except Exception as e:
-            logger.error("Error loading OAuth token for {email}: {e}", email=email, e=e)
-            return None
-
-    @staticmethod
-    def save_token(email: str, token_data: dict) -> None:
-        """Save OAuth2 token for an email."""
-        token_file = OAuthTokenManager.get_token_file(email)
-        try:
-            with open(token_file, "w") as f:
-                json.dump(token_data, f, indent=2)
-            logger.info("OAuth token saved for {email}", email=email)
-        except Exception as e:
-            logger.error("Error saving OAuth token for {email}: {e}", email=email, e=e)
-
-    @staticmethod
-    def delete_token(email: str) -> None:
-        """Delete cached OAuth2 token for an email."""
-        token_file = OAuthTokenManager.get_token_file(email)
-        if token_file.exists():
-            try:
-                token_file.unlink()
-                logger.info("OAuth token deleted for {email}", email=email)
-            except Exception as e:
-                logger.error(
-                    "Error deleting OAuth token for {email}: {e}", email=email, e=e
-                )
-
-    @staticmethod
-    def create_mock_token(email: str, password: str) -> dict:
-        """Create a token structure for accounts without OAuth.
-        
-        This is used as a fallback for non-Gmail accounts and allows
-        the system to track authentication method.
-        """
-        return {
-            "type": "password",
-            "email": email,
-            "password": password,
-            "auth_method": "basic",
-            "created_at": datetime.now().isoformat(),
+def _client_config() -> dict:
+    """Build the client config dict from env vars."""
+    client_id = os.getenv("GMAIL_CLIENT_ID", "")
+    client_secret = os.getenv("GMAIL_CLIENT_SECRET", "")
+    if not client_id or not client_secret:
+        raise ValueError(
+            "Missing GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET in .env — "
+            "see SETUP.md section 4"
+        )
+    return {
+        "installed": {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
         }
+    }
 
 
-class GmailOAuthClient:
-    """Client for Gmail OAuth2 authentication.
+# ── Public API ──────────────────────────────────────────────────────
+
+
+def authorize_account(email: str) -> Credentials:
+    """Interactive: open browser, user logs in, token saved.
     
-    This class handles the OAuth2 flow for Gmail accounts with 2FA
-    without requiring app passwords or account changes.
+    Called once per account from ``auth_setup.py``.
     """
+    flow = InstalledAppFlow.from_client_config(_client_config(), SCOPES)
+    print(f"\n→  Authorize: {email}")
+    print("   A browser window will open. Log in with THIS account.\n")
+    creds = flow.run_local_server(port=0, prompt="consent")
+    _save(email, creds)
+    logger.info("Token saved for {e}", e=email)
+    return creds
 
-    # Google OAuth2 scopes for Gmail IMAP access
-    SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
-    @staticmethod
-    def get_authorization_url(client_id: str, client_secret: str) -> str:
-        """Generate OAuth authorization URL for user.
-        
-        User must visit this URL and authorize the app.
-        """
+def get_access_token(email: str) -> str | None:
+    """Return a valid access token for *email*, refreshing if needed.
+
+    Returns ``None`` when no token file exists (account was never
+    authorized).
+    """
+    path = _token_path(email)
+    if not path.exists():
+        return None
+
+    try:
+        creds = Credentials.from_authorized_user_file(str(path), SCOPES)
+    except Exception as exc:
+        logger.warning("Bad token file for {e}: {x}", e=email, x=exc)
+        return None
+
+    if creds.valid:
+        return creds.token
+
+    if creds.expired and creds.refresh_token:
         try:
-            from google_auth_oauthlib.flow import Flow
-
-            flow = Flow.from_client_config(
-                {
-                    "installed": {
-                        "client_id": client_id,
-                        "client_secret": client_secret,
-                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                        "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"],
-                    }
-                },
-                scopes=GmailOAuthClient.SCOPES,
-            )
-
-            auth_url, _ = flow.authorization_url(prompt="consent")
-            return auth_url
-        except ImportError:
-            logger.error(
-                "google-auth-oauthlib not installed. "
-                "Run: pip install google-auth-oauthlib"
-            )
-            return ""
-
-    @staticmethod
-    def exchange_code_for_token(
-        client_id: str, client_secret: str, auth_code: str
-    ) -> Optional[dict]:
-        """Exchange authorization code for OAuth token."""
-        try:
-            from google_auth_oauthlib.flow import Flow
-
-            flow = Flow.from_client_config(
-                {
-                    "installed": {
-                        "client_id": client_id,
-                        "client_secret": client_secret,
-                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                        "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob"],
-                    }
-                },
-                scopes=GmailOAuthClient.SCOPES,
-            )
-
-            credentials = flow.fetch_token(code=auth_code)
-            token_data = {
-                "access_token": credentials.get("access_token"),
-                "refresh_token": credentials.get("refresh_token"),
-                "token_type": credentials.get("token_type", "Bearer"),
-                "expires_in": credentials.get("expires_in", 3600),
-                "expires_at": (
-                    datetime.now() + timedelta(seconds=credentials.get("expires_in", 3600))
-                ).isoformat(),
-                "scopes": credentials.get("scopes", GmailOAuthClient.SCOPES),
-            }
-            return token_data
-        except Exception as e:
-            logger.error("Error exchanging auth code for token: {e}", e=e)
+            creds.refresh(Request())
+            _save(email, creds)
+            return creds.token
+        except Exception as exc:
+            logger.warning("Token refresh failed for {e}: {x}", e=email, x=exc)
             return None
 
-    @staticmethod
-    def refresh_token(refresh_token: str, client_id: str, client_secret: str) -> Optional[dict]:
-        """Refresh an expired OAuth token."""
-        try:
-            from google.auth.transport.requests import Request
-            from google.oauth2.credentials import Credentials
+    return None
 
-            credentials = Credentials(
-                token=None,
-                refresh_token=refresh_token,
-                token_uri="https://oauth2.googleapis.com/token",
-                client_id=client_id,
-                client_secret=client_secret,
-            )
 
-            credentials.refresh(Request())
+def has_token(email: str) -> bool:
+    return _token_path(email).exists()
 
-            token_data = {
-                "access_token": credentials.token,
-                "refresh_token": credentials.refresh_token,
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "expires_at": (datetime.now() + timedelta(seconds=3600)).isoformat(),
-                "scopes": GmailOAuthClient.SCOPES,
-            }
-            return token_data
-        except Exception as e:
-            logger.error("Error refreshing token: {e}", e=e)
-            return None
+
+# ── Helpers ─────────────────────────────────────────────────────────
+
+
+def _save(email: str, creds: Credentials) -> None:
+    data = {
+        "token": creds.token,
+        "refresh_token": creds.refresh_token,
+        "token_uri": creds.token_uri,
+        "client_id": creds.client_id,
+        "client_secret": creds.client_secret,
+        "scopes": list(creds.scopes or SCOPES),
+    }
+    with open(_token_path(email), "w") as f:
+        json.dump(data, f, indent=2)
+
