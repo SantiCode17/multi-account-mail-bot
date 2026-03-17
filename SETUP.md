@@ -59,16 +59,69 @@ Replace the two placeholder values:
 
 ## 4. Configure Email Accounts
 
-Edit `config/accounts.json`. Each account requires an **app password** (not your regular password).
+Edit `config/accounts.json`. The system automatically handles authentication:
 
-### Structure
+- **Gmail without 2FA**: Uses your password directly
+- **Gmail with 2FA**: Uses OAuth2 tokens (see section 4.1)
+- **Outlook/Hotmail**: Uses your password directly
+- **Other providers**: Uses your password directly
+
+### 4.1 Gmail OAuth2 Setup (For 2FA Accounts)
+
+If your Gmail accounts have **2FA enabled**, the system uses **OAuth2** automatically without requiring app passwords or account changes.
+
+#### Step 1: Get OAuth2 Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or use existing one)
+3. Enable the **Gmail API**:
+   - Go to "APIs & Services" → "Library"
+   - Search for "Gmail API"
+   - Click "Enable"
+4. Create OAuth 2.0 credentials:
+   - Go to "APIs & Services" → "Credentials"
+   - Click "Create Credentials" → "OAuth 2.0 Client ID"
+   - Choose "Desktop application"
+   - Download the JSON file
+   - Open it and copy:
+     - `client_id`
+     - `client_secret`
+
+#### Step 2: Add Credentials to `.env`
+
+Update your `.env` file with:
+
+```env
+GMAIL_CLIENT_ID=your_client_id_from_google_console
+GMAIL_CLIENT_SECRET=your_client_secret_from_google_console
+```
+
+#### Step 3: Generate OAuth2 Tokens
+
+Run this **one time** to authenticate all Gmail accounts:
+
+```bash
+python auth_setup.py
+```
+
+This script will:
+1. Show all Gmail accounts
+2. Ask which ones to authenticate
+3. Open a browser for each account (you need to authorize once)
+4. Save tokens automatically (won't expire or require re-entry)
+
+> The tokens are stored in `config/.oauth_tokens/` (already in `.gitignore` for security)
+
+### 4.2 Account Configuration
+
+Edit `config/accounts.json`:
 
 ```json
 {
   "accounts": [
     {
       "email": "your_email@gmail.com",
-      "password": "your app password",
+      "password": "your_password_or_app_password",
       "imap_server": "imap.gmail.com",
       "imap_port": 993,
       "use_ssl": true
@@ -76,6 +129,12 @@ Edit `config/accounts.json`. Each account requires an **app password** (not your
   ]
 }
 ```
+
+For Gmail:
+- If **2FA is disabled**: Use your regular password
+- If **2FA is enabled**: Run `python auth_setup.py` (password is ignored, OAuth2 is used)
+
+For Outlook/Hotmail/Yahoo: Use your regular password directly
 
 ### Multi-Account Example
 
