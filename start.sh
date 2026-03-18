@@ -127,7 +127,7 @@ start_monitor() {
     echo -e "${CYAN}${BOLD}Starting Inbox Bridge...${NC}"
     echo -e "${CYAN}Press Ctrl+C to stop${NC}"
     echo ""
-    python run.py
+    exec python run.py
 }
 
 print_banner

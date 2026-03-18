@@ -19,6 +19,16 @@ CREATE INDEX IF NOT EXISTS idx_seen_emails_account
 ON seen_emails(account_email, message_id)
 """
 
+_CREATE_SESSIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    chat_id          INTEGER PRIMARY KEY,
+    telegram_user    TEXT    NOT NULL DEFAULT '',
+    first_name       TEXT    NOT NULL DEFAULT '',
+    authenticated_at TEXT    NOT NULL,
+    last_activity    TEXT    NOT NULL
+)
+"""
+
 
 class Database:
     """Async SQLite store for tracking already-seen email Message-IDs."""
@@ -35,6 +45,7 @@ class Database:
         await self._connection.execute("PRAGMA journal_mode=WAL")
         await self._connection.execute(_CREATE_TABLE)
         await self._connection.execute(_INDEX)
+        await self._connection.execute(_CREATE_SESSIONS_TABLE)
         await self._connection.commit()
         logger.info("Database initialized at {path}", path=self._db_path)
 
@@ -165,4 +176,106 @@ class Database:
             return row["cnt"] if row else 0
         except Exception as exc:
             logger.error("DB get_total_count failed: {err}", err=exc)
+            return 0
+
+    # ── Auth sessions ───────────────────────────────────────────────
+
+    async def create_session(
+        self, chat_id: int, telegram_user: str, first_name: str,
+    ) -> None:
+        """Create or update an authenticated session."""
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            await self._conn().execute(
+                "INSERT INTO auth_sessions (chat_id, telegram_user, first_name, authenticated_at, last_activity) "
+                "VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(chat_id) DO UPDATE SET "
+                "  telegram_user = excluded.telegram_user, "
+                "  first_name = excluded.first_name, "
+                "  authenticated_at = excluded.authenticated_at, "
+                "  last_activity = excluded.last_activity",
+                (chat_id, telegram_user, first_name, now, now),
+            )
+            await self._conn().commit()
+        except Exception as exc:
+            logger.error("DB create_session failed: {err}", err=exc)
+
+    async def delete_session(self, chat_id: int) -> bool:
+        """Remove an authenticated session. Returns True if a row was deleted."""
+        try:
+            cursor = await self._conn().execute(
+                "DELETE FROM auth_sessions WHERE chat_id = ?", (chat_id,),
+            )
+            await self._conn().commit()
+            return cursor.rowcount > 0
+        except Exception as exc:
+            logger.error("DB delete_session failed: {err}", err=exc)
+            return False
+
+    async def is_session_active(self, chat_id: int, timeout_hours: int = 0) -> bool:
+        """Check if a chat_id has an active session.
+
+        If *timeout_hours* > 0, sessions older than that are considered expired
+        and auto-removed.
+        """
+        try:
+            cursor = await self._conn().execute(
+                "SELECT authenticated_at FROM auth_sessions WHERE chat_id = ?",
+                (chat_id,),
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                return False
+
+            if timeout_hours > 0:
+                auth_time = datetime.fromisoformat(row["authenticated_at"])
+                if datetime.now(timezone.utc) - auth_time > timedelta(hours=timeout_hours):
+                    await self.delete_session(chat_id)
+                    return False
+
+            # Touch last_activity
+            now = datetime.now(timezone.utc).isoformat()
+            await self._conn().execute(
+                "UPDATE auth_sessions SET last_activity = ? WHERE chat_id = ?",
+                (now, chat_id),
+            )
+            await self._conn().commit()
+            return True
+        except Exception as exc:
+            logger.error("DB is_session_active failed: {err}", err=exc)
+            return False
+
+    async def get_all_active_chat_ids(self, timeout_hours: int = 0) -> list[int]:
+        """Return a list of all chat_ids with active sessions."""
+        try:
+            if timeout_hours > 0:
+                cutoff = (
+                    datetime.now(timezone.utc) - timedelta(hours=timeout_hours)
+                ).isoformat()
+                # Purge expired sessions first
+                await self._conn().execute(
+                    "DELETE FROM auth_sessions WHERE authenticated_at < ?",
+                    (cutoff,),
+                )
+                await self._conn().commit()
+
+            cursor = await self._conn().execute(
+                "SELECT chat_id FROM auth_sessions"
+            )
+            rows = await cursor.fetchall()
+            return [row["chat_id"] for row in rows]
+        except Exception as exc:
+            logger.error("DB get_all_active_chat_ids failed: {err}", err=exc)
+            return []
+
+    async def get_session_count(self) -> int:
+        """Return total number of active sessions."""
+        try:
+            cursor = await self._conn().execute(
+                "SELECT COUNT(*) as cnt FROM auth_sessions"
+            )
+            row = await cursor.fetchone()
+            return row["cnt"] if row else 0
+        except Exception as exc:
+            logger.error("DB get_session_count failed: {err}", err=exc)
             return 0
