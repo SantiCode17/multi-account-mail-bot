@@ -9,6 +9,7 @@ from src.models import (
     AppConfig,
     EmailAccount,
     MonitorConfig,
+    SecurityConfig,
     TelegramConfig,
 )
 
@@ -111,6 +112,26 @@ def load_config() -> AppConfig:
 
     accounts = load_accounts(accounts_config_path)
 
+    # ── Security ────────────────────────────────────────────────────
+    bot_username = os.getenv("BOT_USERNAME", "").strip()
+    bot_password = os.getenv("BOT_PASSWORD", "").strip()
+    if not bot_username or not bot_password:
+        logger.warning(
+            "BOT_USERNAME / BOT_PASSWORD not set — the bot will be OPEN to everyone!"
+        )
+
+    max_login_attempts = _env_int("MAX_LOGIN_ATTEMPTS", 5)
+    lockout_seconds = _env_int("LOCKOUT_SECONDS", 300)
+    session_timeout = _env_int("SESSION_TIMEOUT_HOURS", 0)
+
+    security = SecurityConfig(
+        username=bot_username,
+        password=bot_password,
+        max_login_attempts=max_login_attempts,
+        lockout_seconds=lockout_seconds,
+        session_timeout_hours=session_timeout,
+    )
+
     return AppConfig(
         monitor=MonitorConfig(
             check_interval=check_interval,
@@ -119,6 +140,7 @@ def load_config() -> AppConfig:
             preview_length=preview_length,
         ),
         telegram=TelegramConfig(bot_token=bot_token, chat_id=chat_id),
+        security=security,
         accounts=accounts,
         database_path=database_path,
         log_level=log_level,

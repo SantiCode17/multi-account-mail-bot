@@ -33,6 +33,12 @@ class MonitorScheduler:
         # Accounts that failed auth are disabled for the session
         self._disabled_accounts: set[str] = set()
 
+        # Connect the notifier to the auth system so it can
+        # multicast to all authenticated users
+        self._notifier.set_recipient_provider(
+            self._bot_handlers.auth.get_active_chat_ids,
+        )
+
     # ── Account checking ────────────────────────────────────────────
 
     async def _check_account(self, account: EmailAccount) -> list[EmailMessage]:
@@ -231,11 +237,20 @@ class MonitorScheduler:
         account_count = len(self._config.accounts)
         disabled = len(self._disabled_accounts)
         active = account_count - disabled
+        sec = self._config.security
+        sessions = await self._db.get_session_count()
+        security_info = (
+            "🔒 Security: <b>Enabled</b> (credentials required)"
+            if sec.username and sec.password else
+            "⚠️ Security: <b>Open</b> (no credentials set)"
+        )
         await self._notifier.send_raw(
             f"✅ <b>Inbox Bridge is now online</b>\n\n"
             f"📧 Monitoring <b>{active}</b> active account(s)"
             f"{f' ({disabled} disabled — auth failed)' if disabled else ''}\n"
-            f"⏰ Check interval: <b>{self._config.monitor.check_interval}s</b>\n\n"
+            f"⏰ Check interval: <b>{self._config.monitor.check_interval}s</b>\n"
+            f"{security_info}\n"
+            f"👥 Active sessions: <b>{sessions}</b>\n\n"
             f"Tap /start to open the menu."
         )
 

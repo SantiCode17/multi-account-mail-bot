@@ -39,10 +39,21 @@ class TelegramConfig:
 
 
 @dataclass(frozen=True)
+class SecurityConfig:
+    """Bot access-control configuration."""
+    username: str
+    password: str
+    max_login_attempts: int = 5
+    lockout_seconds: int = 300  # 5 minutes
+    session_timeout_hours: int = 0  # 0 = never expire
+
+
+@dataclass(frozen=True)
 class AppConfig:
     """Top-level application configuration container."""
     monitor: MonitorConfig
     telegram: TelegramConfig
+    security: SecurityConfig = field(default_factory=lambda: SecurityConfig(username="", password=""))
     accounts: list[EmailAccount] = field(default_factory=list)
     database_path: str = "data/seen_emails.db"
     log_level: str = "INFO"
