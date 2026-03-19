@@ -16,8 +16,10 @@ LABEL description="Inbox Bridge — Multi-Account Email Monitor Bot"
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user for security
-RUN groupadd -r inboxbridge && useradd -r -g inboxbridge -d /app -s /sbin/nologin inboxbridge
+# Create non-root user matching typical host UID (1000) for volume permissions
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g ${GID} inboxbridge && useradd -u ${UID} -g inboxbridge -d /app -s /sbin/nologin inboxbridge
 
 WORKDIR /app
 
