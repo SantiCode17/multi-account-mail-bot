@@ -1,0 +1,39 @@
+# ── Version control ──
+.git
+.gitignore
+
+# ── Python artifacts ──
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+venv/
+.venv/
+
+# ── IDE / editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Runtime data (mounted as volumes) ──
+data/
+logs/
+
+# ── Documentation ──
+README.md
+SETUP.md
+LICENSE
+
+# ── Docker itself ──
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# ── Deployment scripts ──
+deployment/
+
+# ── Misc ──
+.env.example
+*.md

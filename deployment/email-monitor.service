@@ -1,18 +1,35 @@
 [Unit]
 Description=Inbox Bridge — Email Monitor Bot Service
-After=network.target
+Documentation=https://github.com/SantiCode17/multi-account-mail-bot
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=%i
+Group=%i
 WorkingDirectory=%h/inbox-bridge
-Environment="PATH=%h/inbox-bridge/venv/bin"
+Environment="PATH=%h/inbox-bridge/venv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONUNBUFFERED=1"
 ExecStart=%h/inbox-bridge/venv/bin/python %h/inbox-bridge/run.py
+
+# ── Restart policy ──────────────────────────────────────────────
 Restart=always
 RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# ── Graceful shutdown ──────────────────────────────────────────
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# ── Logging ────────────────────────────────────────────────────
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=inbox-bridge
+
+# ── Watchdog ───────────────────────────────────────────────────
+WatchdogSec=120
 
 [Install]
 WantedBy=default.target

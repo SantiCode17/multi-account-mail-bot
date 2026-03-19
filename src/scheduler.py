@@ -9,6 +9,13 @@ from src.bot_handlers import BotHandlers
 from src.config import load_accounts
 from src.database import Database
 from src.email_monitor import EmailMonitor
+from src.healthcheck import (
+    mark_ready,
+    mark_stopping,
+    start_health_server,
+    stop_health_server,
+    update_health,
+)
 from src.models import AppConfig, EmailAccount, EmailMessage
 from src.telegram_notifier import TelegramNotifier
 
@@ -30,6 +37,7 @@ class MonitorScheduler:
         self._running = True
         self._last_cleanup = time.monotonic()
         self._bot_handlers = BotHandlers(config, self._db)
+        self._cycles_completed = 0
         # Accounts that failed auth are disabled for the session
         self._disabled_accounts: set[str] = set()
 
@@ -184,11 +192,15 @@ class MonitorScheduler:
     def _handle_signal(self) -> None:
         logger.info("Shutdown signal received — stopping gracefully")
         self._running = False
+        mark_stopping()
 
     # ── Main entry point ────────────────────────────────────────────
 
     async def run(self) -> None:
         """Initialize resources, seed DB, start bot, then loop forever."""
+        # Start the health-check HTTP server (for Docker / orchestrators)
+        start_health_server()
+
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             try:
@@ -259,11 +271,16 @@ class MonitorScheduler:
             n=account_count, s=self._config.monitor.check_interval, c=self._config.monitor.max_concurrent,
         )
 
+        # Mark the service as fully operational
+        mark_ready()
+
         try:
             while self._running:
                 cycle_start = time.monotonic()
                 await self._run_cycle()
                 self._bot_handlers.increment_cycles()
+                self._cycles_completed += 1
+                update_health(status="running", cycles=self._cycles_completed)
                 await self._maybe_cleanup()
 
                 elapsed = time.monotonic() - cycle_start
@@ -272,6 +289,7 @@ class MonitorScheduler:
                     await asyncio.sleep(wait)
         finally:
             logger.info("Shutting down — closing resources")
+            mark_stopping()
             try:
                 await self._notifier.send_raw("⛔ <b>Inbox Bridge stopped</b>")
             except Exception:
@@ -284,3 +302,4 @@ class MonitorScheduler:
             except Exception:
                 pass
             await self._db.close()
+            stop_health_server()

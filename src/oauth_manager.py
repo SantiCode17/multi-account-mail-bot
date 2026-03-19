@@ -7,7 +7,6 @@ Tokens are persisted in ``config/credentials/`` (one JSON per account).
 import json
 import os
 from pathlib import Path
-from datetime import datetime, timedelta
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -109,4 +108,3 @@ def _save(email: str, creds: Credentials) -> None:
     }
     with open(_token_path(email), "w") as f:
         json.dump(data, f, indent=2)
-

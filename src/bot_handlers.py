@@ -598,7 +598,7 @@ class BotHandlers:
                 f"      📡 {server} · 📩 {count}"
             )
 
-        lines.append(f"\n━━━━━━━━━━━━━━━━━━━━━━")
+        lines.append("\n━━━━━━━━━━━━━━━━━━━━━━")
         lines.append(f"<b>Total:</b> {len(accounts)} account(s)")
         return "\n".join(lines)
 

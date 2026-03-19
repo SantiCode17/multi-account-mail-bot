@@ -107,7 +107,7 @@ check_accounts() {
         exit 1
     fi
 
-    ACCOUNT_COUNT=$(python -c "
+    ACCOUNT_COUNT=$($PYTHON -c "
 import json
 with open('config/accounts.json') as f:
     data = json.load(f)
