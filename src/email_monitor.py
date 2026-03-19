@@ -198,7 +198,7 @@ class EmailMonitor:
 
             for num in msg_nums:
                 try:
-                    status, msg_data = conn.fetch(num, "(RFC822)")
+                    status, msg_data = conn.fetch(num, "(BODY.PEEK[])")
                     if status != "OK" or not msg_data or msg_data[0] is None:
                         continue
                     raw_email = msg_data[0]
@@ -212,7 +212,7 @@ class EmailMonitor:
 
             return results
 
-        except imaplib.IMAP4.error as exc:
+        except imaplib.IMAP4.error:
             raise  # Let scheduler handle auth failures
         except socket.timeout:
             logger.debug(

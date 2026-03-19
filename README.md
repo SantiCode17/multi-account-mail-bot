@@ -124,13 +124,50 @@ Edit `config/accounts.json`:
 
 ## Running
 
-### Option A — Using start.sh (recommended)
+### Option A — Docker (Recommended for 24/7 production)
+
+The bot runs as a background service that **starts automatically on boot**, **restarts on crashes**, and **never requires a terminal open**.
+
+```bash
+# First time: build and start
+./ctl.sh start
+
+# That's it — the bot is now running 24/7.
+```
+
+**Management commands:**
+
+| Command | Description |
+|---|---|
+| `./ctl.sh start` | Start the bot in background (survives reboots) |
+| `./ctl.sh stop` | Stop the bot |
+| `./ctl.sh restart` | Restart the bot |
+| `./ctl.sh status` | Show container status + health check |
+| `./ctl.sh logs` | Follow live logs (Ctrl+C to exit) |
+| `./ctl.sh health` | Quick health check (JSON response) |
+| `./ctl.sh build` | Rebuild the Docker image |
+| `./ctl.sh update` | Pull latest code, rebuild, and restart |
+| `./ctl.sh destroy` | Remove container and image completely |
+
+> **Why this works 24/7:** Docker's `restart: unless-stopped` policy ensures the container restarts after any crash and starts automatically when Docker daemon boots (which starts on system boot). You never need to open a terminal or remember to start anything.
+
+### Option B — Using start.sh (Development / debugging)
 
 ```bash
 ./start.sh
 ```
 
-### Option B — Manual
+> ⚠️ This runs in the foreground. The bot stops when you close the terminal.
+
+### Option C — systemd (Linux servers without Docker)
+
+```bash
+sudo bash deployment/install-service.sh
+```
+
+This installs a systemd service that starts on boot and restarts on failure.
+
+### Option D — Manual
 
 ```bash
 python3 -m venv venv
@@ -138,13 +175,6 @@ source venv/bin/activate          # Linux/macOS
 # venv\Scripts\activate           # Windows
 pip install -r requirements.txt
 python run.py
-```
-
-### Option C — Docker
-
-```bash
-docker compose up -d
-docker compose logs -f
 ```
 
 ## Bot Commands
@@ -211,39 +241,98 @@ inbox-bridge/
 │   ├── bot_handlers.py      # Interactive bot commands
 │   ├── database.py          # SQLite for deduplication
 │   ├── scheduler.py         # Orchestrator
+│   ├── healthcheck.py       # HTTP health-check server
 │   ├── oauth_manager.py     # Gmail OAuth2 token management
 │   └── utils.py             # Text utilities
 ├── config/
 │   └── accounts.json        # Email accounts list
 ├── deployment/
-│   └── email-monitor.service # Systemd unit file
+│   ├── email-monitor.service # Systemd unit file
+│   └── install-service.sh   # Systemd installer script
 ├── auth_setup.py            # One-time OAuth2 token generator
 ├── .env.example             # Environment template
-├── start.sh                 # One-command launcher
+├── .dockerignore            # Docker build exclusions
+├── ctl.sh                   # Production management CLI
+├── start.sh                 # Development launcher
 ├── run.py                   # Python entry point
 ├── requirements.txt         # Dependencies
-├── Dockerfile               # Docker image
-├── docker-compose.yml       # Docker Compose
+├── Dockerfile               # Multi-stage production image
+├── docker-compose.yml       # Docker Compose (24/7 config)
 ├── SETUP.md                 # Full setup guide
 └── README.md                # This file
 ```
 
-## Deployment on a Server
+## Deployment (24/7 Production)
+
+The bot is designed to run **continuously** without requiring any terminal, manual intervention, or your computer to stay on (when deployed to a server).
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Docker Engine                     │
+│  (starts on boot, manages container lifecycle)      │
+│                                                      │
+│  ┌───────────────────────────────────────────────┐  │
+│  │          inbox-bridge container                │  │
+│  │                                                │  │
+│  │  ┌──────────┐  ┌────────────────────────────┐ │  │
+│  │  │ Health   │  │     Inbox Bridge Bot       │ │  │
+│  │  │ Check    │◄─│  (email monitor + telegram)│ │  │
+│  │  │ :8080    │  │                            │ │  │
+│  │  └──────────┘  └────────────────────────────┘ │  │
+│  │                                                │  │
+│  │  restart: unless-stopped                      │  │
+│  │  HEALTHCHECK every 30s                         │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+### What happens when...
+
+| Scenario | Behaviour |
+|---|---|
+| Bot crashes (unhandled error) | Docker restarts it automatically in ~10s |
+| Computer reboots | Docker daemon starts → container starts automatically |
+| Terminal is closed | Nothing — the bot runs in the background |
+| Network drops temporarily | Bot reconnects on next monitoring cycle |
+| Docker daemon stops | Container resumes when Docker starts again |
+| You run `./ctl.sh stop` | Bot stays stopped until you `start` again |
+
+### Using Docker (recommended)
+
+```bash
+./ctl.sh start      # Start in background — runs 24/7
+./ctl.sh status     # Verify everything is healthy
+./ctl.sh logs       # Watch live output (optional)
+```
 
 ### Using systemd (Linux VPS)
 
 ```bash
-sudo cp deployment/email-monitor.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable email-monitor
-sudo systemctl start email-monitor
-sudo journalctl -u email-monitor -f
+sudo bash deployment/install-service.sh
 ```
 
-### Using Docker
-
 ```bash
-docker compose up -d
+# Useful commands
+systemctl status inbox-bridge-$USER
+journalctl -u inbox-bridge-$USER -f
+sudo systemctl restart inbox-bridge-$USER
+```
+
+### Health Check
+
+The bot exposes a health endpoint at `http://localhost:8080/health`:
+
+```json
+{
+    "status": "healthy",
+    "bot_status": "running",
+    "uptime_seconds": 86400,
+    "last_cycle_seconds_ago": 8,
+    "cycles_completed": 8640,
+    "pid": 1
+}
 ```
 
 ## Adding New Email Accounts

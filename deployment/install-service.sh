@@ -73,6 +73,7 @@ echo -e "${YELLOW}Creating systemd service file...${NC}"
 cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=Inbox Bridge — Email Monitor Bot Service
+Documentation=https://github.com/SantiCode17/multi-account-mail-bot
 After=network-online.target
 Wants=network-online.target
 
@@ -81,17 +82,27 @@ Type=simple
 User=${CURRENT_USER}
 Group=${CURRENT_USER}
 WorkingDirectory=${PROJECT_DIR}
-Environment="PATH=${PROJECT_DIR}/venv/bin"
+Environment="PATH=${PROJECT_DIR}/venv/bin:/usr/local/bin:/usr/bin"
 Environment="PYTHONUNBUFFERED=1"
 ExecStart=${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/run.py
+
+# Restart policy — always come back after failures
 Restart=always
 RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Graceful shutdown
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Logging
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=inbox-bridge
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
 EOF
 
 echo -e "${GREEN}✔ Service file created at $SERVICE_FILE${NC}\n"
