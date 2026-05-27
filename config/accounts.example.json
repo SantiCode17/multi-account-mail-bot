@@ -1,0 +1,25 @@
+{
+  "accounts": [
+    {
+      "email": "your_gmail_account@gmail.com",
+      "password": "abcd efgh ijkl mnop",
+      "imap_server": "imap.gmail.com",
+      "imap_port": 993,
+      "use_ssl": true
+    },
+    {
+      "email": "your_outlook_account@outlook.com",
+      "password": "your_password",
+      "imap_server": "outlook.office365.com",
+      "imap_port": 993,
+      "use_ssl": true
+    },
+    {
+      "email": "your_custom_account@example.com",
+      "password": "your_password",
+      "imap_server": "mail.example.com",
+      "imap_port": 993,
+      "use_ssl": true
+    }
+  ]
+}

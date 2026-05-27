@@ -70,7 +70,13 @@ TELEGRAM_CHAT_ID=your_chat_id_here
 
 ### Step 2 — Add email accounts
 
-Edit `config/accounts.json`:
+Copy the template and fill in your own accounts:
+
+```bash
+cp config/accounts.example.json config/accounts.json
+```
+
+`config/accounts.json` is in `.gitignore` and must never be committed. Edit it with your real accounts:
 
 ```json
 {
