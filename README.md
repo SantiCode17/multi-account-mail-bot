@@ -360,4 +360,8 @@ The bot exposes a health endpoint at `http://localhost:8080/health`:
 
 ## License
 
-Internal tool — Private use only.
+Personal project — source published for portfolio purposes. Not intended for redistribution or commercial use.
+
+## Author
+
+**Santiago Sánchez March** — [GitHub](https://github.com/SantiCode17) · [LinkedIn](https://www.linkedin.com/in/santiago-s%C3%A1nchez-march/)
